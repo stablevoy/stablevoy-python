@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stablevoy"
+version = "1.0.0"
+description = "Python client for the Stablevoy API: non-custodial USDT and USDC payments, invoices and signed webhooks."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = []
+keywords = ["stablevoy", "usdt", "usdc", "trc20", "stablecoin", "crypto payments", "payment gateway", "webhooks", "tether", "tron"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://stablevoy.com"
+Documentation = "https://stablevoy.com/docs/"
+Source = "https://github.com/stablevoy/stablevoy-python"
+Issues = "https://github.com/stablevoy/stablevoy-python/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stablevoy"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/stablevoy", "README.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=stablevoy --cov-branch --cov-report=term-missing --cov-fail-under=100"
+pythonpath = ["src"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+
+[tool.ruff]
+line-length = 140
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "RUF", "SIM", "PT", "N", "ANN", "TRY", "EM", "PL"]
+ignore = ["TRY003", "PLR0913", "PLR2004", "EM101", "EM102"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "ANN", "PLR2004", "SLF001"]

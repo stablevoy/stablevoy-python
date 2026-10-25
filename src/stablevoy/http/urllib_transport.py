@@ -38,6 +38,8 @@ class UrllibTransport:
     ) -> None:
         if not api_key.strip():
             raise ConfigurationError("The API key is empty. Create one in the Stablevoy dashboard.")
+        if not 0 < timeout_seconds <= 600:
+            raise ConfigurationError(f"timeout_seconds must be more than 0 and at most 600; got {timeout_seconds}")
         self._api_key = api_key
         self._base_url = self._checked_base_url(base_url)
         self._user_agent = user_agent

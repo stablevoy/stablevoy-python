@@ -21,7 +21,7 @@ def test_creates_an_invoice_with_the_key_the_idempotency_key_and_json() -> None:
     assert sent.headers["Authorization"] == "Bearer sk_test_key"
     assert sent.headers["Idempotency-key"] == "order-1042"
     assert sent.headers["Content-type"] == "application/json"
-    assert sent.headers["User-agent"].startswith("stablevoy-python/1.0.0 Python/")
+    assert sent.headers["User-agent"].startswith("stablevoy-python/1.0.1 Python/")
     assert sent.timeout == 30.0
     assert json.loads(sent.body or b"") == {
         "amountUsdCents": 1999,

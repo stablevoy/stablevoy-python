@@ -20,6 +20,7 @@ from stablevoy.model.created_invoice import CreatedInvoice
 from stablevoy.model.deposit_address import DepositAddress
 from stablevoy.model.invoice import Invoice
 from stablevoy.model.invoice_page import InvoicePage
+from stablevoy.model.invoice_source import InvoiceSource
 from stablevoy.model.invoice_status import InvoiceStatus
 from stablevoy.model.limits import Limits
 from stablevoy.model.network import Network
@@ -38,6 +39,7 @@ __all__ = [
     "DepositAddress",
     "Invoice",
     "InvoicePage",
+    "InvoiceSource",
     "InvoiceStatus",
     "Limits",
     "MaintenanceError",

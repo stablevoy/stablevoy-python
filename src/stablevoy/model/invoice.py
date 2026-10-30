@@ -5,6 +5,7 @@ from datetime import datetime
 
 from stablevoy.model.deposit_address import DepositAddress
 from stablevoy.model.fields import Fields
+from stablevoy.model.invoice_source import InvoiceSource
 from stablevoy.model.invoice_status import InvoiceStatus
 from stablevoy.model.payment import Payment
 
@@ -27,6 +28,8 @@ class Invoice:
     created_at: datetime
     deposit_addresses: tuple[DepositAddress, ...]
     payments: tuple[Payment, ...]
+    source: InvoiceSource | None = None
+    """Where the invoice came from; None only from an API older than 31 October 2026, which did not send it."""
 
     @classmethod
     def from_fields(cls, f: Fields) -> Invoice:
@@ -45,6 +48,7 @@ class Invoice:
             f.date("createdAt"),
             f.objects("depositAddresses", DepositAddress.from_fields),
             f.objects("payments", Payment.from_fields),
+            InvoiceSource.from_nullable_fields(None if f.raw()["source"] is None else f.child("source")) if "source" in f.raw() else None,
         )
 
     def is_paid(self) -> bool:

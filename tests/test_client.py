@@ -73,7 +73,7 @@ def test_names_the_integration_in_the_user_agent() -> None:
 
 
 def test_exports_the_version() -> None:
-    assert stablevoy.__version__ == "1.0.1"
+    assert stablevoy.__version__ == "1.1.0"
 
 
 class _Handler(BaseHTTPRequestHandler):

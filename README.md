@@ -41,6 +41,15 @@ for invoice in stablevoy.invoices.all(status="paid"):
     print(invoice.external_reference, invoice.amount_usd_cents)
 ```
 
+Narrow the list by source, created days (UTC, both ends included) or a search by invoice id or the start of your order reference. Each invoice says where it came from:
+
+```python
+from stablevoy import InvoiceSource
+
+for invoice in stablevoy.invoices.all(source=InvoiceSource.PAYMENT_LINK, created_from="2026-11-01", created_to="2026-11-30"):
+    print(invoice.id, invoice.source.kind if invoice.source else None)
+```
+
 ## Verify webhooks
 
 Stablevoy posts an event to your webhook URL when an invoice is paid, overpaid, underpaid, expired, paid late or put on hold. Check the signature before you trust it, using the signing secret shown when you set the webhook in the dashboard. Pass the raw body, exactly as received.

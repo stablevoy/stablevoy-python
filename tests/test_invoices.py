@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from stablevoy import InvoiceStatus
+from stablevoy import InvoiceSource, InvoiceStatus
 
 from .support import INVOICE_ID, answer, client, example
 
@@ -21,7 +21,7 @@ def test_creates_an_invoice_with_the_key_the_idempotency_key_and_json() -> None:
     assert sent.headers["Authorization"] == "Bearer sk_test_key"
     assert sent.headers["Idempotency-key"] == "order-1042"
     assert sent.headers["Content-type"] == "application/json"
-    assert sent.headers["User-agent"].startswith("stablevoy-python/1.0.1 Python/")
+    assert sent.headers["User-agent"].startswith("stablevoy-python/1.1.0 Python/")
     assert sent.timeout == 30.0
     assert json.loads(sent.body or b"") == {
         "amountUsdCents": 1999,
@@ -106,6 +106,66 @@ def test_walks_every_page() -> None:
         "https://api.stablevoy.com/v1/invoices?limit=2&status=expired",
         "https://api.stablevoy.com/v1/invoices?limit=2&cursor=next&status=expired",
     ]
+
+
+def test_sends_the_filters_and_reads_the_source_of_each_listed_invoice() -> None:
+    invoice = example("GET", "/v1/invoices/{invoiceId}", 200)
+    items = [
+        {**invoice, "source": {"kind": "plugin", "platform": "woocommerce", "apiKeyId": "k1"}},
+        {**invoice, "source": {"kind": "api_key", "apiKeyId": "k2", "apiKeyName": "own code"}},
+        {**invoice, "source": {"kind": "payment_link"}},
+        {**invoice, "source": None},
+    ]
+    t = client(answer(200, {"items": items, "nextCursor": None}))
+    page = t.client.invoices.list(
+        limit=10,
+        status=InvoiceStatus.PAID,
+        source=InvoiceSource.WOOCOMMERCE,
+        created_from="2026-10-01",
+        created_to="2026-10-31",
+        search="order 1/2",
+    )
+    assert t.opener.last.url == (
+        "https://api.stablevoy.com/v1/invoices?limit=10&status=paid&source=woocommerce&createdFrom=2026-10-01&createdTo=2026-10-31&q=order+1%2F2"
+    )
+    assert [i.source for i in page.items] == [
+        InvoiceSource("plugin", "woocommerce", "k1", None),
+        InvoiceSource("api_key", None, "k2", "own code"),
+        InvoiceSource("payment_link", None, None, None),
+        InvoiceSource("not_recorded", None, None, None),
+    ]
+
+
+def test_reads_the_source_of_a_single_invoice_and_none_from_an_older_api() -> None:
+    invoice = example("GET", "/v1/invoices/{invoiceId}", 200)
+    older = {k: v for k, v in invoice.items() if k != "source"}
+    t = client(answer(200, invoice), answer(200, older))
+    source = t.client.invoices.get(INVOICE_ID).source
+    assert source is not None
+    assert source.kind == InvoiceSource.PLUGIN
+    assert t.client.invoices.get(INVOICE_ID).source is None
+
+
+@pytest.mark.parametrize(
+    ("bad", "message"),
+    [
+        ({"created_from": "1.10.2026"}, "created_from"),
+        ({"created_to": "2026-10-1"}, "created_to"),
+        ({"search": ""}, "search"),
+        ({"search": "x" * 201}, "search"),
+    ],
+)
+def test_refuses_a_bad_filter_before_sending_anything(bad: dict[str, str], message: str) -> None:
+    t = client()
+    with pytest.raises(ValueError, match=message):
+        t.client.invoices.list(**bad)  # type: ignore[arg-type]
+    assert t.opener.sent == []
+
+
+def test_walks_every_page_of_a_filter() -> None:
+    t = client(answer(200, {"items": [], "nextCursor": None}))
+    assert list(t.client.invoices.all(source=InvoiceSource.PAYMENT_LINK, page_size=50)) == []
+    assert t.opener.last.url == "https://api.stablevoy.com/v1/invoices?limit=50&source=payment_link"
 
 
 def test_invoice_status_tells_which_orders_can_be_fulfilled() -> None:

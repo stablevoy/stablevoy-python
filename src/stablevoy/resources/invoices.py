@@ -10,6 +10,7 @@ from stablevoy.model.invoice import Invoice
 from stablevoy.model.invoice_page import InvoicePage
 
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)
+_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
 class Invoices:
@@ -45,22 +46,59 @@ class Invoices:
             raise ValueError("An invoice id is a UUID, like 7c3360b5-e8cc-4775-8a13-7324d4f1296e")
         return Invoice.from_fields(Fields.of(self._transport.get(f"/v1/invoices/{invoice_id}"), "invoice"))
 
-    def list(self, *, limit: int = 50, cursor: str | None = None, status: str | None = None) -> InvoicePage:
-        """One page of invoices, newest first; ``status`` filters by InvoiceStatus."""
+    def list(
+        self,
+        *,
+        limit: int = 50,
+        cursor: str | None = None,
+        status: str | None = None,
+        source: str | None = None,
+        created_from: str | None = None,
+        created_to: str | None = None,
+        search: str | None = None,
+    ) -> InvoicePage:
+        """
+        One page of invoices, newest first. Every filter is optional and they combine: ``status`` (InvoiceStatus),
+        ``source`` (payment_link, woocommerce, edd, whmcs, api_key or not_recorded), ``created_from`` and ``created_to``
+        (UTC days as YYYY-MM-DD, both ends included) and ``search`` (an invoice id or the start of the external reference).
+        """
         if not 1 <= limit <= 100:
             raise ValueError("limit must be from 1 to 100")
+        for name, day in (("created_from", created_from), ("created_to", created_to)):
+            if day is not None and not _DAY.fullmatch(day):
+                raise ValueError(f"{name} must be a date as YYYY-MM-DD")
+        if search is not None and not 1 <= len(search) <= 200:
+            raise ValueError("search must be 1 to 200 characters")
         query: dict[str, str | int] = {"limit": limit}
         if cursor is not None:
             query["cursor"] = cursor
-        if status is not None:
-            query["status"] = status
+        for key, value in (("status", status), ("source", source), ("createdFrom", created_from), ("createdTo", created_to), ("q", search)):
+            if value is not None:
+                query[key] = value
         return InvoicePage.from_fields(Fields.of(self._transport.get("/v1/invoices", query), "invoices"))
 
-    def all(self, *, status: str | None = None, page_size: int = 100) -> Iterator[Invoice]:
-        """Every invoice, newest first, fetching the pages as you iterate."""
+    def all(
+        self,
+        *,
+        status: str | None = None,
+        page_size: int = 100,
+        source: str | None = None,
+        created_from: str | None = None,
+        created_to: str | None = None,
+        search: str | None = None,
+    ) -> Iterator[Invoice]:
+        """Every invoice, newest first, fetching the pages as you iterate; the filters are those of ``list()``."""
         cursor: str | None = None
         while True:
-            page = self.list(limit=page_size, cursor=cursor, status=status)
+            page = self.list(
+                limit=page_size,
+                cursor=cursor,
+                status=status,
+                source=source,
+                created_from=created_from,
+                created_to=created_to,
+                search=search,
+            )
             yield from page.items
             if page.next_cursor is None:
                 return

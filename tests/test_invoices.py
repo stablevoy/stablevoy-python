@@ -153,6 +153,8 @@ def test_reads_the_source_of_a_single_invoice_and_none_from_an_older_api() -> No
         ({"created_to": "2026-10-1"}, "created_to"),
         ({"search": ""}, "search"),
         ({"search": "x" * 201}, "search"),
+        # The API counts UTF-16 units, as JavaScript does: an emoji is two.
+        ({"search": "😀" * 100 + "x"}, "search"),
     ],
 )
 def test_refuses_a_bad_filter_before_sending_anything(bad: dict[str, str], message: str) -> None:
@@ -160,6 +162,13 @@ def test_refuses_a_bad_filter_before_sending_anything(bad: dict[str, str], messa
     with pytest.raises(ValueError, match=message):
         t.client.invoices.list(**bad)  # type: ignore[arg-type]
     assert t.opener.sent == []
+
+
+@pytest.mark.parametrize("search", ["я" * 200, "😀" * 100])
+def test_sends_a_search_as_long_as_the_api_allows(search: str) -> None:
+    t = client(answer(200, {"items": [], "nextCursor": None}))
+    t.client.invoices.list(search=search)
+    assert len(t.opener.sent) == 1
 
 
 def test_walks_every_page_of_a_filter() -> None:

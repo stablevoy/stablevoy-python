@@ -67,7 +67,8 @@ class Invoices:
         for name, day in (("created_from", created_from), ("created_to", created_to)):
             if day is not None and not _DAY.fullmatch(day):
                 raise ValueError(f"{name} must be a date as YYYY-MM-DD")
-        if search is not None and not 1 <= len(search) <= 200:
+        # The API counts UTF-16 units, as JavaScript does: a character outside the basic plane (an emoji) is two.
+        if search is not None and not 1 <= len(search.encode("utf-16-le")) // 2 <= 200:
             raise ValueError("search must be 1 to 200 characters")
         query: dict[str, str | int] = {"limit": limit}
         if cursor is not None:

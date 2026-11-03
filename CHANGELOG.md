@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `invoices.create()` checks the idempotency key before sending: 1 to 255 printable ASCII characters without spaces, as the API requires. Before, a key with a line break or a non-ASCII letter failed inside http.client with an error outside `StablevoyError`.
 - The search length is counted as the API counts it (UTF-16 units: an emoji is two), so a search the API would refuse is refused before it is sent.
 - Webhook events now carry `source` on their invoice, as the API answers do. Events recorded before 3 November 2026 have none, and still verify.
 - One-click connect: `StablevoyConnect.create().exchange(code=..., code_verifier=..., site=...)` redeems a connect code for the shop's API key and webhook secret (`ConnectedStore`). It needs no API key and is never retried, since the code works once.

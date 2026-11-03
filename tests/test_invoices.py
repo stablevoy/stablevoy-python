@@ -164,6 +164,21 @@ def test_refuses_a_bad_filter_before_sending_anything(bad: dict[str, str], messa
     assert t.opener.sent == []
 
 
+# The API takes 1 to 255 printable ASCII characters without spaces; anything else used to fail inside http.client.
+@pytest.mark.parametrize("key", ["", "order 1", "order\n1", "заказ-1", "k" * 256])
+def test_refuses_an_idempotency_key_the_api_would_refuse(key: str) -> None:
+    t = client(answer(201, example("POST", "/v1/invoices", 201)))
+    with pytest.raises(ValueError, match="idempotency key"):
+        t.client.invoices.create(1999, idempotency_key=key)
+    assert t.opener.sent == []
+
+
+def test_sends_an_idempotency_key_as_long_as_the_api_allows() -> None:
+    t = client(answer(201, example("POST", "/v1/invoices", 201)))
+    t.client.invoices.create(1999, idempotency_key="k" * 255)
+    assert t.opener.last.headers["Idempotency-key"] == "k" * 255
+
+
 @pytest.mark.parametrize("search", ["я" * 200, "😀" * 100])
 def test_sends_a_search_as_long_as_the_api_allows(search: str) -> None:
     t = client(answer(200, {"items": [], "nextCursor": None}))

@@ -11,6 +11,7 @@ from stablevoy.model.invoice_page import InvoicePage
 
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)
 _DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+_IDEMPOTENCY_KEY = re.compile(r"[\x21-\x7e]{1,255}")
 
 
 class Invoices:
@@ -33,6 +34,9 @@ class Invoices:
         """
         if not isinstance(amount_usd_cents, int) or isinstance(amount_usd_cents, bool) or amount_usd_cents < 1:
             raise ValueError("amount_usd_cents must be a positive whole number of US cents, for example 1999 for $19.99")
+        # What the API accepts; anything else would be refused there, or fail inside http.client on the header.
+        if idempotency_key is not None and not _IDEMPOTENCY_KEY.fullmatch(idempotency_key):
+            raise ValueError("The idempotency key must be 1 to 255 printable ASCII characters without spaces, such as your order id")
         body: dict[str, object] = {"amountUsdCents": amount_usd_cents}
         if external_reference is not None:
             body["externalReference"] = external_reference

@@ -62,6 +62,23 @@ if store.networks_without_payout:
     ...  # These enabled networks have no payout wallet, so buyers do not see them.
 ```
 
+## Connect a shop in one click
+
+A shop integration can get its API key and webhook secret without the merchant copying them: it sends the merchant to the Stablevoy dashboard with a PKCE challenge, gets a code back on its callback URL and redeems it. This call needs no API key, since the shop has none yet. The code works once, so the call is never retried.
+
+```python
+from stablevoy import StablevoyConnect
+
+connected = StablevoyConnect.create().exchange(code=code, code_verifier=code_verifier, site="https://shop.example.com")
+# Store connected.api_key and connected.webhook_secret; connected.store_name is the store the merchant chose.
+```
+
+When the merchant disconnects the shop, give the key up so it stops working at once. A key that is already revoked raises `AuthenticationError`, which for a disconnect means the same:
+
+```python
+stablevoy.stores.revoke_current_key()
+```
+
 ## Verify webhooks
 
 Stablevoy posts an event to your webhook URL when an invoice is paid, overpaid, underpaid, expired, paid late or put on hold. Check the signature before you trust it, using the signing secret shown when you set the webhook in the dashboard. Pass the raw body, exactly as received.

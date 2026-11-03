@@ -2,6 +2,7 @@
 
 from stablevoy._version import __version__
 from stablevoy.client import Stablevoy
+from stablevoy.connect import StablevoyConnect
 from stablevoy.errors.api_error import ApiError
 from stablevoy.errors.authentication_error import AuthenticationError
 from stablevoy.errors.configuration_error import ConfigurationError
@@ -16,6 +17,7 @@ from stablevoy.errors.unexpected_response_error import UnexpectedResponseError
 from stablevoy.errors.validation_error import ValidationError
 from stablevoy.http.retry_policy import RetryPolicy
 from stablevoy.http.transport import Transport
+from stablevoy.model.connected_store import ConnectedStore
 from stablevoy.model.created_invoice import CreatedInvoice
 from stablevoy.model.deposit_address import DepositAddress
 from stablevoy.model.invoice import Invoice
@@ -35,6 +37,7 @@ __all__ = [
     "ApiError",
     "AuthenticationError",
     "ConfigurationError",
+    "ConnectedStore",
     "CreatedInvoice",
     "DepositAddress",
     "Invoice",
@@ -52,6 +55,7 @@ __all__ = [
     "RetryPolicy",
     "SignatureError",
     "Stablevoy",
+    "StablevoyConnect",
     "StablevoyError",
     "Store",
     "Token",

@@ -22,13 +22,14 @@ _RETRYABLE_STATUSES = frozenset({429, 502, 503, 504, 520, 521, 522, 523, 524})
 class UrllibTransport:
     """
     The API over HTTP: Bearer API key, JSON in and out, errors as exceptions, and retries only where a repeat cannot do
-    harm (reads, and creates that carry an Idempotency-Key).
+    harm (reads, deletes, and creates that carry an Idempotency-Key). ``api_key`` is None only for the one call made before a
+    shop has a key, the connect exchange: then no Authorization header is sent.
     """
 
     def __init__(
         self,
         *,
-        api_key: str,
+        api_key: str | None,
         base_url: str,
         user_agent: str,
         retries: RetryPolicy,
@@ -37,7 +38,7 @@ class UrllibTransport:
         errors: ErrorFactory,
         timeout_seconds: float = 30.0,
     ) -> None:
-        if not api_key.strip():
+        if api_key is not None and not api_key.strip():
             raise ConfigurationError("The API key is empty. Create one in the Stablevoy dashboard.")
         if not 0 < timeout_seconds <= 600:
             raise ConfigurationError(f"timeout_seconds must be more than 0 and at most 600; got {timeout_seconds}")
@@ -52,17 +53,22 @@ class UrllibTransport:
 
     def get(self, path: str, query: Mapping[str, str | int] | None = None) -> object:
         url = self._base_url + path + (f"?{urlencode(query)}" if query else "")
-        return self._send(Request(url, method="GET"), retryable=True)  # noqa: S310 - the scheme is checked to be http(s)
+        return self._decode(self._send(Request(url, method="GET"), retryable=True))  # noqa: S310 - the scheme is checked to be http(s)
+
+    def delete(self, path: str) -> None:
+        self._send(Request(self._base_url + path, method="DELETE"), retryable=True)  # noqa: S310 - checked scheme
 
     def post(self, path: str, body: Mapping[str, object], idempotency_key: str | None = None) -> object:
         request = Request(self._base_url + path, data=json.dumps(body).encode(), method="POST")  # noqa: S310 - checked scheme
         request.add_header("Content-Type", "application/json")
         if idempotency_key is not None:
             request.add_header("Idempotency-Key", idempotency_key)
-        return self._send(request, retryable=idempotency_key is not None)
+        return self._decode(self._send(request, retryable=idempotency_key is not None))
 
-    def _send(self, request: Request, *, retryable: bool) -> object:
-        request.add_header("Authorization", f"Bearer {self._api_key}")
+    def _send(self, request: Request, *, retryable: bool) -> bytes:
+        """The body of the first successful answer, or the error of the last failed attempt."""
+        if self._api_key is not None:
+            request.add_header("Authorization", f"Bearer {self._api_key}")
         request.add_header("Accept", "application/json")
         request.add_header("User-Agent", self._user_agent)
         attempt = 1
@@ -77,7 +83,7 @@ class UrllibTransport:
                 attempt += 1
                 continue
             if 200 <= answer.status < 300:
-                return self._decode(answer.body)
+                return answer.body
             api_error = self._errors.from_problem(answer.status, answer.body, self._retry_after(answer))
             retry = retryable and self._is_retryable(api_error)
             wait = self._retries.wait_before(attempt, api_error.retry_after_seconds) if retry else None

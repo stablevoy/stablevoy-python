@@ -78,6 +78,10 @@ class Fields:
     def child(self, key: str) -> Fields:
         return Fields.of(self._value(key), f"{self._path}.{key}")
 
+    def path_of(self, key: str) -> str:
+        """Where a field of this object is, for error messages."""
+        return f"{self._path}.{key}"
+
     def raw(self) -> dict[str, object]:
         """The object as decoded, for data this library does not model."""
         return self._data

@@ -29,7 +29,10 @@ class Invoice:
     deposit_addresses: tuple[DepositAddress, ...]
     payments: tuple[Payment, ...]
     source: InvoiceSource | None = None
-    """Where the invoice came from; None only from an API older than 31 October 2026, which did not send it."""
+    """
+    Where the invoice came from; None only on invoices from an API older than 31 October 2026 and on webhook events
+    recorded before 3 November 2026, which did not carry it.
+    """
 
     @classmethod
     def from_fields(cls, f: Fields) -> Invoice:

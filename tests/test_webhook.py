@@ -13,7 +13,7 @@ from .support import FIXTURES
 
 VECTORS = json.loads((FIXTURES / "webhook-vectors.json").read_text())
 SECRET: str = VECTORS["secret"]
-PAID, TEST = VECTORS["cases"]
+PAID, TEST, PAID_WITH_SOURCE = VECTORS["cases"]
 
 
 @dataclass
@@ -30,6 +30,20 @@ def test_accepts_what_the_api_signed_as_text_or_bytes() -> None:
         body = json.loads(case["body"])
         assert verifier.verify(case["body"], case["header"]).id == body["id"]
         assert verifier.verify(case["body"].encode(), case["header"]).type == body["type"]
+
+
+def test_reads_the_source_of_an_invoice_event_and_accepts_an_older_event_without_it() -> None:
+    current = WebhookVerifier(SECRET, clock=At(PAID_WITH_SOURCE["timestamp"])).verify(PAID_WITH_SOURCE["body"], PAID_WITH_SOURCE["header"])
+    assert current.invoice is not None
+    assert current.invoice.source is not None
+    assert (current.invoice.source.kind, current.invoice.source.platform, current.invoice.source.api_key_id) == (
+        "plugin",
+        "woocommerce",
+        "2f6a8c1e-4b3d-4e5f-9a7b-8c9d0e1f2a3b",
+    )
+    older = WebhookVerifier(SECRET, clock=At(PAID["timestamp"])).verify(PAID["body"], PAID["header"])
+    assert older.invoice is not None
+    assert older.invoice.source is None
 
 
 def test_gives_the_invoice_of_an_invoice_event_and_the_data_of_others() -> None:

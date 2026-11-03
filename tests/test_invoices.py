@@ -92,10 +92,13 @@ def test_lists_a_page_with_its_filters_and_by_default_fifty() -> None:
     assert t.opener.last.url == "https://api.stablevoy.com/v1/invoices?limit=50"
 
 
-@pytest.mark.parametrize("limit", [0, 101])
+# 5.5 used to pass and reach the API, which refused it; a bool is no page size either.
+@pytest.mark.parametrize("limit", [0, 101, 5.5, True])
 def test_refuses_a_page_size_outside_one_to_a_hundred(limit: int) -> None:
+    t = client()
     with pytest.raises(ValueError, match="limit"):
-        client().client.invoices.list(limit=limit)
+        t.client.invoices.list(limit=limit)
+    assert t.opener.sent == []
 
 
 def test_walks_every_page() -> None:

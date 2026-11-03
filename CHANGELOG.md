@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `invoices.list()` refuses a `limit` that is not a whole number (such as 5.5 or True) before sending, as Node does. Before, the API refused it.
 - `invoices.create()` checks the idempotency key before sending: 1 to 255 printable ASCII characters without spaces, as the API requires. Before, a key with a line break or a non-ASCII letter failed inside http.client with an error outside `StablevoyError`.
 - The search length is counted as the API counts it (UTF-16 units: an emoji is two), so a search the API would refuse is refused before it is sent.
 - Webhook events now carry `source` on their invoice, as the API answers do. Events recorded before 3 November 2026 have none, and still verify.

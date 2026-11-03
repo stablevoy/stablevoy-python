@@ -66,8 +66,8 @@ class Invoices:
         ``source`` (payment_link, woocommerce, edd, whmcs, api_key or not_recorded), ``created_from`` and ``created_to``
         (UTC days as YYYY-MM-DD, both ends included) and ``search`` (an invoice id or the start of the external reference).
         """
-        if not 1 <= limit <= 100:
-            raise ValueError("limit must be from 1 to 100")
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:
+            raise ValueError("limit must be a whole number from 1 to 100")
         for name, day in (("created_from", created_from), ("created_to", created_to)):
             if day is not None and not _DAY.fullmatch(day):
                 raise ValueError(f"{name} must be a date as YYYY-MM-DD")

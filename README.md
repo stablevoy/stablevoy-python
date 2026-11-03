@@ -94,7 +94,7 @@ Django: `verifier.verify(request.body, request.headers.get("X-Stablevoy-Signatur
 
 Every error extends `StablevoyError`. API errors are `ApiError` with the HTTP `status`, a stable `code`, a readable `detail` and a link to the [error catalog](https://stablevoy.com/docs/api/errors/); the ones you may want to handle on their own are `AuthenticationError`, `ValidationError` (with `issues`), `NotFoundError`, `RateLimitedError` and `MaintenanceError`. `TransportError` means no answer at all.
 
-Reads, and creates that carry an idempotency key, are retried on rate limits, maintenance and failed connections, at most twice and only for waits of up to 10 seconds. Anything longer reaches you with `retry_after_seconds`, so a request never hangs. Every request times out after 30 seconds.
+Reads, and creates that carry an idempotency key, are retried on rate limits, maintenance, gateway errors while the API restarts (502, 504, 520 to 524) and failed connections, at most twice and only for waits of up to 10 seconds. Anything longer reaches you with `retry_after_seconds`, so a request never hangs. Every request times out after 30 seconds.
 
 ```python
 from stablevoy import RetryPolicy, Stablevoy

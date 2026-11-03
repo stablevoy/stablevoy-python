@@ -112,6 +112,34 @@ def test_does_not_retry_an_error_a_repeat_cannot_fix() -> None:
     assert t.slept == []
 
 
+@pytest.mark.parametrize("status", [502, 504, 520, 521, 522, 523, 524])
+def test_retries_a_gateway_error_on_reads_and_idempotent_creates_only(status: int) -> None:
+    # While the API restarts, nginx and Cloudflare answer with a gateway error and an HTML page, not a problem document.
+    gateway = answer(status, "<html>Bad gateway</html>")
+    read = client(gateway, answer(200, example("GET", "/v1/limits", 200)))
+    read.client.platform.limits()
+    assert read.slept == [1]
+
+    with_key = client(gateway, answer(201, example("POST", "/v1/invoices", 201)))
+    with_key.client.invoices.create(1999, idempotency_key="order-1")
+    assert with_key.slept == [1]
+
+    without_key = client(gateway)
+    with pytest.raises(ApiError) as caught:
+        without_key.client.invoices.create(1999)
+    assert caught.value.code == f"http_{status}"
+    assert without_key.slept == []
+
+
+def test_does_not_retry_an_internal_error() -> None:
+    t = client(answer(500, problem(500, "internal_error", "Something went wrong")))
+    with pytest.raises(ApiError) as caught:
+        t.client.platform.limits()
+    assert caught.value.code == "internal_error"
+    assert t.slept == []
+    assert len(t.opener.sent) == 1
+
+
 def test_retries_a_failed_connection_then_reports_it_with_the_cause() -> None:
     retried = client(OSError("timed out"), answer(200, example("GET", "/v1/limits", 200)))
     retried.client.platform.limits()

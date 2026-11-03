@@ -16,6 +16,7 @@ from stablevoy.http.opener import Opener
 from stablevoy.http.retry_policy import RetryPolicy
 
 _LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+_RETRYABLE_STATUSES = frozenset({429, 502, 503, 504, 520, 521, 522, 523, 524})
 
 
 class UrllibTransport:
@@ -87,7 +88,11 @@ class UrllibTransport:
 
     @staticmethod
     def _is_retryable(error: ApiError) -> bool:
-        return error.status in (429, 503)
+        """
+        429 and 503, and the gateway errors nginx and Cloudflare answer while the API restarts (502, 504, 520 to 524). A 500
+        is a fault of the API, not a moment: repeating it would not help.
+        """
+        return error.status in _RETRYABLE_STATUSES
 
     @staticmethod
     def _decode(body: bytes) -> object:

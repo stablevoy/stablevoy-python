@@ -3,9 +3,9 @@ from __future__ import annotations
 
 class RetryPolicy:
     """
-    When to retry: on 429, 503 and a failed connection, at most max_retries times, waiting what Retry-After asks (or 1, 2,
-    4 seconds without it). A wait longer than max_wait_seconds is not slept through: the error goes to the caller with
-    retry_after_seconds, so a request never hangs for minutes during maintenance.
+    When to retry: on 429, 503, the gateway errors 502, 504 and 520 to 524, and a failed connection, at most max_retries
+    times, waiting what Retry-After asks (or 1, 2, 4 seconds without it). A wait longer than max_wait_seconds is not slept
+    through: the error goes to the caller with retry_after_seconds, so a request never hangs for minutes during maintenance.
     """
 
     def __init__(self, max_retries: int = 2, max_wait_seconds: int = 10) -> None:

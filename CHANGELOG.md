@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- New webhook type `invoice.payment_flagged`: a payment of an invoice that is already paid, overpaid or paid late was flagged by sanctions screening. The invoice keeps its status; the flagged payment is in the event data under `payment`.
 - `Store.connected_platform`: the plugin connected to the store in one click, or None. `Network` carries `forwarder_implementation`, `explorer_address_url` and `rpc_url`. `ApiError.limit_usd_cents` gives the limit an amount was refused for. All three were sent by the API and dropped.
 - `invoices.list()` refuses a `limit` that is not a whole number (such as 5.5 or True) before sending, as Node does. Before, the API refused it.
 - `invoices.create()` checks the idempotency key before sending: 1 to 255 printable ASCII characters without spaces, as the API requires. Before, a key with a line break or a non-ASCII letter failed inside http.client with an error outside `StablevoyError`.

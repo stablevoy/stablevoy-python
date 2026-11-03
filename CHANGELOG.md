@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
 
 - New webhook type `invoice.payment_flagged`: a payment of an invoice that is already paid, overpaid or paid late was flagged by sanctions screening. The invoice keeps its status; the flagged payment is in the event data under `payment`.
 - `Store.connected_platform`: the plugin connected to the store in one click, or None. `Network` carries `forwarder_implementation`, `explorer_address_url` and `rpc_url`. `ApiError.limit_usd_cents` gives the limit an amount was refused for. All three were sent by the API and dropped.

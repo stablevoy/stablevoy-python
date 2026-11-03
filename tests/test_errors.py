@@ -44,6 +44,16 @@ def test_maps_each_problem_to_its_error(status: int, code: str, error_type: type
     assert f"HTTP {status}" in str(error)
 
 
+def test_gives_the_limit_an_amount_was_refused_for() -> None:
+    refused = {**problem(422, "amount_above_store_limit", "The amount is above the store limit."), "limitUsdCents": 50000}
+    with pytest.raises(ValidationError) as caught:
+        client(answer(422, refused)).client.invoices.create(99999)
+    assert caught.value.limit_usd_cents == 50000
+    with pytest.raises(NotFoundError) as other:
+        client(answer(404, problem(404, "not_found", "Invoice not found"))).client.invoices.get(INVOICE_ID)
+    assert other.value.limit_usd_cents is None
+
+
 def test_keeps_the_issues_of_a_validation_error_and_drops_malformed_ones() -> None:
     body = {
         **problem(400, "validation_failed", "Invalid body"),

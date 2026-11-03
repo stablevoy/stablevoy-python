@@ -47,6 +47,20 @@ def test_reads_limits_pricing_and_networks() -> None:
     networks = t.client.platform.networks()
     assert networks
     assert networks[0].tokens
+    first = example_value("GET", "/v1/networks", 200)
+    assert isinstance(first, list)
+    assert isinstance(first[0], dict)
+    assert (networks[0].forwarder_implementation, networks[0].explorer_address_url, networks[0].rpc_url) == (
+        first[0]["forwarderImplementation"],
+        first[0]["explorerAddressUrl"],
+        first[0]["rpcUrl"],
+    )
+
+
+def test_names_the_plugin_connected_to_the_store() -> None:
+    connected = client(answer(200, {**example("GET", "/v1/store", 200), "connectedPlatform": "woocommerce"})).client.stores.current()
+    assert connected.connected_platform == "woocommerce"
+    assert client(answer(200, example("GET", "/v1/store", 200))).client.stores.current().connected_platform is None
 
 
 def test_refuses_networks_that_are_not_a_list() -> None:

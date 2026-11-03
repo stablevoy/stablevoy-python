@@ -19,6 +19,12 @@ class Network:
     factory_address: str | None
     explorer_url: str | None
     tokens: tuple[Token, ...]
+    forwarder_implementation: str | None
+    """The forwarder contract the deposit addresses clone; with factory_address it is what a manual recovery needs."""
+    explorer_address_url: str | None
+    """The explorer page of an address is this followed by the address."""
+    rpc_url: str | None
+    """A public RPC endpoint of the network."""
 
     @classmethod
     def from_fields(cls, f: Fields) -> Network:
@@ -32,4 +38,7 @@ class Network:
             f.nullable_string("factoryAddress"),
             f.nullable_string("explorerUrl"),
             f.objects("tokens", Token.from_fields),
+            f.nullable_string("forwarderImplementation"),
+            f.nullable_string("explorerAddressUrl"),
+            f.nullable_string("rpcUrl"),
         )

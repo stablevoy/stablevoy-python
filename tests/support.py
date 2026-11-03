@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass, field
 from email.message import Message
@@ -20,7 +21,8 @@ def example_value(method: str, path: str, status: int) -> object:
     for key in ("paths", path, method.lower(), "responses", str(status), "content", "application/json", "example"):
         assert isinstance(node, dict), f"no example for {method} {path} {status} at {key}"
         node = node[key]
-    return node
+    # A copy: a test that changes its example must not change it for the tests after it.
+    return copy.deepcopy(node)
 
 
 def example(method: str, path: str, status: int) -> dict[str, object]:

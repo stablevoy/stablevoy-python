@@ -22,6 +22,7 @@ class ApiError(StablevoyError):
         type: str | None,
         issues: tuple[ProblemIssue, ...],
         retry_after_seconds: int | None,
+        limit_usd_cents: int | None = None,
     ) -> None:
         super().__init__(f"{detail} (HTTP {status}, {code})")
         self.status = status
@@ -30,3 +31,5 @@ class ApiError(StablevoyError):
         self.type = type
         self.issues = issues
         self.retry_after_seconds = retry_after_seconds
+        self.limit_usd_cents = limit_usd_cents
+        """For an amount refused by a limit (amount_below_minimum, amount_above_store_limit, ...): that limit in US cents."""

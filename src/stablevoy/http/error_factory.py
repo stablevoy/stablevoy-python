@@ -20,6 +20,7 @@ class ErrorFactory:
         code = code if isinstance(code, str) else f"http_{status}"
         detail = problem.get("detail")
         problem_type = problem.get("type")
+        limit = problem.get("limitUsdCents")
         error_class: type[ApiError] = ApiError
         if status == 401:
             error_class = AuthenticationError
@@ -38,6 +39,7 @@ class ErrorFactory:
             type=problem_type if isinstance(problem_type, str) else None,
             issues=self._issues(problem.get("issues")),
             retry_after_seconds=retry_after_seconds,
+            limit_usd_cents=limit if isinstance(limit, int) and not isinstance(limit, bool) else None,
         )
 
     @staticmethod

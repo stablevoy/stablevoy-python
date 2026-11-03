@@ -22,6 +22,8 @@ class Store:
     created_at: datetime
     networks_without_payout: tuple[str, ...]
     """Enabled networks with no payout wallet for their family (EVM or Tron) on the account: buyers are not offered them."""
+    connected_platform: str | None
+    """The plugin connected to the store in one click (woocommerce, edd, whmcs), or None."""
 
     def can_accept_payments(self) -> bool:
         """
@@ -44,4 +46,5 @@ class Store:
             f.nullable_string("defaultReturnUrl"),
             f.date("createdAt"),
             f.strings("networksWithoutPayout"),
+            f.nullable_string("connectedPlatform"),
         )

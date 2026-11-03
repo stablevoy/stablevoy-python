@@ -20,6 +20,15 @@ class Store:
     website_url: str | None
     default_return_url: str | None
     created_at: datetime
+    networks_without_payout: tuple[str, ...]
+    """Enabled networks with no payout wallet for their family (EVM or Tron) on the account: buyers are not offered them."""
+
+    def can_accept_payments(self) -> bool:
+        """
+        False when no enabled network has a payout wallet: every invoice would be refused with payout_address_not_set.
+        Check it before offering the payment method, and show the merchant networks_without_payout when it is not empty.
+        """
+        return any(key not in self.networks_without_payout for key in self.enabled_networks)
 
     @classmethod
     def from_fields(cls, f: Fields) -> Store:
@@ -34,4 +43,5 @@ class Store:
             f.nullable_string("websiteUrl"),
             f.nullable_string("defaultReturnUrl"),
             f.date("createdAt"),
+            f.strings("networksWithoutPayout"),
         )

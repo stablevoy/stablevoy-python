@@ -10,6 +10,9 @@ class ApiError(StablevoyError):
     code's entry in the error catalog (https://stablevoy.com/docs/api/errors/).
     """
 
+    PAYOUT_ADDRESS_NOT_SET = "payout_address_not_set"
+    """No enabled network of the store has a payout wallet; Store.can_accept_payments() tells it in advance."""
+
     def __init__(
         self,
         *,

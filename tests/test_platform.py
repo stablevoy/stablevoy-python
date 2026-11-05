@@ -29,6 +29,33 @@ def test_tells_whether_any_enabled_network_has_a_payout_wallet() -> None:
     assert ApiError.PAYOUT_ADDRESS_NOT_SET == "payout_address_not_set"
 
 
+def test_reads_the_evm_payout_status_and_the_networks_it_blocks() -> None:
+    store = example("GET", "/v1/store", 200)
+    plain = client(answer(200, store)).client.stores.current()
+    assert plain.evm_payout_status == store["evmPayoutStatus"]
+    assert plain.evm_networks_blocked == ()
+    assert not plain.evm_payout_needs_review()
+
+    def read(**fields: object) -> Store:
+        body = {**store, "enabledNetworks": ["base", "tron"], "networksWithoutPayout": [], **fields}
+        return client(answer(200, body)).client.stores.current()
+
+    blocked = read(evmPayoutStatus=Store.EVM_PAYOUT_UNACKNOWLEDGED, evmNetworksBlocked=["base"])
+    assert blocked.evm_payout_needs_review()
+    assert blocked.evm_networks_blocked == ("base",)
+    assert blocked.can_accept_payments()
+    assert not read(evmPayoutStatus="unacknowledged", evmNetworksBlocked=["base"], networksWithoutPayout=["tron"]).can_accept_payments()
+    assert read(evmPayoutStatus=None).evm_payout_status is None
+    assert ApiError.PAYOUT_ADDRESS_UNACKNOWLEDGED == "payout_address_unacknowledged"
+
+
+def test_refuses_a_store_without_the_evm_payout_fields() -> None:
+    old = dict(example("GET", "/v1/store", 200))
+    del old["evmNetworksBlocked"]
+    with pytest.raises(UnexpectedResponseError):
+        client(answer(200, old)).client.stores.current()
+
+
 def test_refuses_a_store_without_the_payout_field() -> None:
     old = dict(example("GET", "/v1/store", 200))
     del old["networksWithoutPayout"]

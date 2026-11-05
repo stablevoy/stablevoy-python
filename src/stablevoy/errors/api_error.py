@@ -13,6 +13,12 @@ class ApiError(StablevoyError):
     PAYOUT_ADDRESS_NOT_SET = "payout_address_not_set"
     """No enabled network of the store has a payout wallet; Store.can_accept_payments() tells it in advance."""
 
+    PAYOUT_ADDRESS_UNACKNOWLEDGED = "payout_address_unacknowledged"
+    """
+    The EVM payout wallet is not confirmed in the dashboard (or changed since) and the store has no other network to
+    offer; Store.evm_payout_needs_review() and Store.can_accept_payments() tell it in advance.
+    """
+
     def __init__(
         self,
         *,

@@ -13,7 +13,7 @@ from .support import FIXTURES
 
 VECTORS = json.loads((FIXTURES / "webhook-vectors.json").read_text())
 SECRET: str = VECTORS["secret"]
-PAID, TEST, PAID_WITH_SOURCE = VECTORS["cases"]
+PAID, TEST, PAID_WITH_SOURCE, PAYOUT_ATTENTION = VECTORS["cases"]
 
 
 @dataclass
@@ -44,6 +44,20 @@ def test_reads_the_source_of_an_invoice_event_and_accepts_an_older_event_without
     older = WebhookVerifier(SECRET, clock=At(PAID["timestamp"])).verify(PAID["body"], PAID["header"])
     assert older.invoice is not None
     assert older.invoice.source is None
+
+
+def test_gives_the_data_of_a_payout_attention_event_without_an_invoice() -> None:
+    assert PAYOUT_ATTENTION["name"] == "store.payout_attention"
+    event = WebhookVerifier(SECRET, clock=At(PAYOUT_ATTENTION["timestamp"])).verify(PAYOUT_ATTENTION["body"], PAYOUT_ATTENTION["header"])
+    assert event.type == "store.payout_attention"
+    assert event.invoice is None
+    payout = event.data["payout"]
+    assert isinstance(payout, dict)
+    assert (payout["status"], payout["blockedNetworks"], payout["dashboardUrl"]) == (
+        "unacknowledged",
+        ["base", "arbitrum"],
+        "https://stablevoy.com/app/",
+    )
 
 
 def test_gives_the_invoice_of_an_invoice_event_and_the_data_of_others() -> None:

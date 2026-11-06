@@ -15,6 +15,8 @@ class InvoiceStatus:
     EXPIRED: Final = "expired"
     PAID_LATE: Final = "paid_late"
     ON_HOLD: Final = "on_hold"
+    CANCELLED: Final = "cancelled"
+    """Cancelled before any payment was seen (invoices.cancel()); a payment that still arrives makes it paid_late."""
 
     @staticmethod
     def is_paid(status: str) -> bool:

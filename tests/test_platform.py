@@ -49,6 +49,35 @@ def test_reads_the_evm_payout_status_and_the_networks_it_blocks() -> None:
     assert ApiError.PAYOUT_ADDRESS_UNACKNOWLEDGED == "payout_address_unacknowledged"
 
 
+def test_reads_the_payout_addresses_of_the_account() -> None:
+    store = example("GET", "/v1/store", 200)
+    result = client(answer(200, {**store, "payoutAddresses": {"evm": "0x" + "ab" * 20, "tron": None}})).client.stores.current()
+    assert (result.payout_addresses.evm, result.payout_addresses.tron) == ("0x" + "ab" * 20, None)
+    del store["payoutAddresses"]
+    with pytest.raises(UnexpectedResponseError):
+        client(answer(200, store)).client.stores.current()
+
+
+def test_reads_the_payment_window_of_the_store_none_for_the_platform_default() -> None:
+    store = example("GET", "/v1/store", 200)
+    assert client(answer(200, store)).client.stores.current().invoice_lifetime_minutes is None
+    assert client(answer(200, {**store, "invoiceLifetimeMinutes": 1440})).client.stores.current().invoice_lifetime_minutes == 1440
+    del store["invoiceLifetimeMinutes"]
+    with pytest.raises(UnexpectedResponseError):
+        client(answer(200, store)).client.stores.current()
+
+
+def test_reads_the_invoice_lifetime_from_the_limits() -> None:
+    limits = example("GET", "/v1/limits", 200)
+    result = client(answer(200, limits)).client.platform.limits()
+    assert (result.default_invoice_lifetime_minutes, result.min_invoice_lifetime_minutes, result.max_invoice_lifetime_minutes) == (
+        limits["defaultInvoiceLifetimeMinutes"],
+        limits["minInvoiceLifetimeMinutes"],
+        limits["maxInvoiceLifetimeMinutes"],
+    )
+    assert ApiError.INVALID_INVOICE_LIFETIME == "invalid_invoice_lifetime"
+
+
 def test_refuses_a_store_without_the_evm_payout_fields() -> None:
     old = dict(example("GET", "/v1/store", 200))
     del old["evmNetworksBlocked"]

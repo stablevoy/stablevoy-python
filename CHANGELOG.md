@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0
+
+- `invoices.cancel(invoice_id)` cancels an invoice that is still waiting for its first payment: the payment page tells the buyer not to pay and the webhook `invoice.cancelled` is sent. Cancelling it again returns it unchanged. Once a payment has been seen the API refuses with `ApiError.INVOICE_NOT_CANCELLABLE`; money that still arrives after a cancel makes the invoice `paid_late`. New status `InvoiceStatus.CANCELLED` and webhook type `invoice.cancelled`.
+- `invoices.create()` takes `expires_in_minutes`: how long the buyer has to pay this invoice, 15 to 10080 minutes (7 days). Outside the bounds the API answers `ApiError.INVALID_INVOICE_LIFETIME`.
+- `Store.invoice_lifetime_minutes`: the store's payment window, None for the platform default. `Limits` carries `default_invoice_lifetime_minutes`, `min_invoice_lifetime_minutes` and `max_invoice_lifetime_minutes`.
+- `Store.payout_addresses` (`PayoutAddresses` with `evm` and `tron`): the account's payout wallets per network family, None when not set. Read only; they are changed in the dashboard with a wallet signature.
+- These fields need the API of 6 November 2026; an older answer without them is refused as an unexpected response.
+
 ## 1.4.0
 
 - `Store` carries `evm_payout_status` (`plain`, `acknowledged`, `unacknowledged`, `unchecked`, or None without an EVM payout wallet, with `Store.EVM_PAYOUT_*` constants) and `evm_networks_blocked`: the enabled EVM networks new invoices leave out while the EVM payout wallet is not confirmed in the dashboard. `Store.evm_payout_needs_review()` tells it.

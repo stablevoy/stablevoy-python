@@ -23,7 +23,13 @@ from stablevoy.http.urllib_opener import UrllibOpener
 
 from .support import answer, client
 
-LIMITS = {"minInvoiceUsdCents": 500, "maxInvoiceUsdCents": 100000}
+LIMITS = {
+    "minInvoiceUsdCents": 500,
+    "maxInvoiceUsdCents": 100000,
+    "defaultInvoiceLifetimeMinutes": 60,
+    "minInvoiceLifetimeMinutes": 15,
+    "maxInvoiceLifetimeMinutes": 10080,
+}
 
 
 def test_talks_to_the_configured_host_and_names_the_integration() -> None:
@@ -73,13 +79,16 @@ def test_names_the_integration_in_the_user_agent() -> None:
 
 
 def test_exports_the_version() -> None:
-    assert stablevoy.__version__ == "1.4.0"
+    assert stablevoy.__version__ == "1.5.0"
 
 
 class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path == "/v1/limits":
-            self._reply(200, b'{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000}')
+            self._reply(
+                200,
+                b'{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000,"defaultInvoiceLifetimeMinutes":60,"minInvoiceLifetimeMinutes":15,"maxInvoiceLifetimeMinutes":10080}',
+            )
         elif self.path == "/v1/store":
             self.send_response(302)
             self.send_header("Location", "https://evil.example/steal")

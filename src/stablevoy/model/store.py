@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import ClassVar
 
 from stablevoy.model.fields import Fields
+from stablevoy.model.payout_addresses import PayoutAddresses
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,13 @@ class Store:
     """
     evm_networks_blocked: tuple[str, ...]
     """Enabled EVM networks new invoices leave out because evm_payout_status is unacknowledged; empty otherwise."""
+    payout_addresses: PayoutAddresses
+    """The account's payout wallets per network family."""
+    invoice_lifetime_minutes: int | None
+    """
+    The store's payment window: how long its invoices can be paid, in minutes, when the request names none; None means
+    the platform default.
+    """
 
     def can_accept_payments(self) -> bool:
         """
@@ -73,4 +81,6 @@ class Store:
             f.nullable_string("connectedPlatform"),
             f.nullable_string("evmPayoutStatus"),
             f.strings("evmNetworksBlocked"),
+            PayoutAddresses.from_fields(f.child("payoutAddresses")),
+            f.nullable_integer("invoiceLifetimeMinutes"),
         )

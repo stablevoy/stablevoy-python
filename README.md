@@ -34,6 +34,8 @@ created = stablevoy.invoices.create(
 # Send the buyer to created.checkout_url
 ```
 
+The buyer has the store's payment window to pay, or the platform default when the store sets none (`stablevoy.platform.limits()` gives it and the bounds). Pass `expires_in_minutes` (15 to 10080, that is 7 days) to set it for one invoice, for example a day or more for an invoice you send by email.
+
 Read an invoice with `stablevoy.invoices.get(invoice_id)`, or walk them all:
 
 ```python
@@ -49,6 +51,23 @@ from stablevoy import InvoiceSource
 for invoice in stablevoy.invoices.all(source=InvoiceSource.PAYMENT_LINK, created_from="2026-11-01", created_to="2026-11-30"):
     print(invoice.id, invoice.source.kind if invoice.source else None)
 ```
+
+## Cancel an unpaid invoice
+
+When the order is cancelled before the buyer pays, cancel its invoice. The payment page then tells the buyer not to pay, and the webhook `invoice.cancelled` is sent. Cancelling it again returns it unchanged.
+
+```python
+from stablevoy import ApiError
+
+try:
+    invoice = stablevoy.invoices.cancel(invoice_id)
+except ApiError as error:
+    if error.code != ApiError.INVOICE_NOT_CANCELLABLE:
+        raise
+    # A payment has already been seen on chain: fulfil or refund the order instead.
+```
+
+Money that still arrives after a cancel reaches your payout wallet as always and makes the invoice `paid_late`.
 
 ## Check the store before going live
 

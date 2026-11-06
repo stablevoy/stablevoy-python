@@ -26,29 +26,46 @@ class Invoices:
         *,
         external_reference: str | None = None,
         return_url: str | None = None,
+        expires_in_minutes: int | None = None,
         idempotency_key: str | None = None,
     ) -> CreatedInvoice:
         """
         Creates an invoice. Pass your order id as the idempotency key: a retry with the same key and request returns the
         first invoice (replayed: True) instead of a second one, and only then does this library retry on its own.
+
+        expires_in_minutes: how long the buyer has to pay, 15 to 10080 minutes (7 days). None: the store's payment
+        window, else the platform default (platform.limits() tells it). Use a day or more for an invoice sent by email.
         """
         if not isinstance(amount_usd_cents, int) or isinstance(amount_usd_cents, bool) or amount_usd_cents < 1:
             raise ValueError("amount_usd_cents must be a positive whole number of US cents, for example 1999 for $19.99")
         # What the API accepts; anything else would be refused there, or fail inside http.client on the header.
         if idempotency_key is not None and not _IDEMPOTENCY_KEY.fullmatch(idempotency_key):
             raise ValueError("The idempotency key must be 1 to 255 printable ASCII characters without spaces, such as your order id")
+        # The bounds (platform.limits()) are checked by the API, which answers invalid_invoice_lifetime.
+        if expires_in_minutes is not None and (not isinstance(expires_in_minutes, int) or isinstance(expires_in_minutes, bool)):
+            raise ValueError("expires_in_minutes must be a whole number of minutes, for example 60 or 1440")
         body: dict[str, object] = {"amountUsdCents": amount_usd_cents}
         if external_reference is not None:
             body["externalReference"] = external_reference
         if return_url is not None:
             body["returnUrl"] = return_url
+        if expires_in_minutes is not None:
+            body["expiresInMinutes"] = expires_in_minutes
         return CreatedInvoice.from_fields(Fields.of(self._transport.post("/v1/invoices", body, idempotency_key), "invoice"))
 
     def get(self, invoice_id: str) -> Invoice:
-        # Ids are UUIDs; anything else (such as "..") could make the request reach another path with your key.
-        if not _UUID.fullmatch(invoice_id):
-            raise ValueError("An invoice id is a UUID, like 7c3360b5-e8cc-4775-8a13-7324d4f1296e")
+        _check_id(invoice_id)
         return Invoice.from_fields(Fields.of(self._transport.get(f"/v1/invoices/{invoice_id}"), "invoice"))
+
+    def cancel(self, invoice_id: str) -> Invoice:
+        """
+        Cancels an invoice that is still waiting for its first payment, for example when the order was cancelled: the
+        payment page tells the buyer not to pay and the webhook invoice.cancelled is sent. Cancelling it again returns it
+        unchanged. Once a payment has been seen the API refuses with ApiError.INVOICE_NOT_CANCELLABLE; money that still
+        arrives after a cancel makes the invoice paid_late. Not retried on its own; calling it again is safe.
+        """
+        _check_id(invoice_id)
+        return Invoice.from_fields(Fields.of(self._transport.post(f"/v1/invoices/{invoice_id}/cancel", {}), "invoice"))
 
     def list(
         self,
@@ -108,3 +125,9 @@ class Invoices:
             if page.next_cursor is None:
                 return
             cursor = page.next_cursor
+
+
+def _check_id(invoice_id: str) -> None:
+    # Ids are UUIDs; anything else (such as "..") could make the request reach another path with your key.
+    if not _UUID.fullmatch(invoice_id):
+        raise ValueError("An invoice id is a UUID, like 7c3360b5-e8cc-4775-8a13-7324d4f1296e")

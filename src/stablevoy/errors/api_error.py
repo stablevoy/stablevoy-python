@@ -19,6 +19,12 @@ class ApiError(StablevoyError):
     offer; Store.evm_payout_needs_review() and Store.can_accept_payments() tell it in advance.
     """
 
+    INVOICE_NOT_CANCELLABLE = "invoice_not_cancellable"
+    """invoices.cancel() on an invoice that already has a payment seen on chain, or is paid, expired, underpaid or on hold."""
+
+    INVALID_INVOICE_LIFETIME = "invalid_invoice_lifetime"
+    """expires_in_minutes is outside the bounds platform.limits() gives (15 to 10080 minutes)."""
+
     def __init__(
         self,
         *,

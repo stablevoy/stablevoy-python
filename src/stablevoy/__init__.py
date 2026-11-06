@@ -27,6 +27,7 @@ from stablevoy.model.invoice_status import InvoiceStatus
 from stablevoy.model.limits import Limits
 from stablevoy.model.network import Network
 from stablevoy.model.payment import Payment
+from stablevoy.model.payout_addresses import PayoutAddresses
 from stablevoy.model.pricing import Pricing
 from stablevoy.model.store import Store
 from stablevoy.model.token import Token
@@ -49,6 +50,7 @@ __all__ = [
     "Network",
     "NotFoundError",
     "Payment",
+    "PayoutAddresses",
     "Pricing",
     "ProblemIssue",
     "RateLimitedError",

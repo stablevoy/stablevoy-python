@@ -5,9 +5,9 @@ from datetime import UTC, datetime
 
 import pytest
 
-from stablevoy import InvoiceSource, InvoiceStatus
+from stablevoy import ApiError, InvoiceSource, InvoiceStatus
 
-from .support import INVOICE_ID, answer, client, example
+from .support import INVOICE_ID, answer, client, example, problem
 
 
 def test_creates_an_invoice_with_the_key_the_idempotency_key_and_json() -> None:
@@ -21,7 +21,7 @@ def test_creates_an_invoice_with_the_key_the_idempotency_key_and_json() -> None:
     assert sent.headers["Authorization"] == "Bearer sk_test_key"
     assert sent.headers["Idempotency-key"] == "order-1042"
     assert sent.headers["Content-type"] == "application/json"
-    assert sent.headers["User-agent"].startswith("stablevoy-python/1.4.0 Python/")
+    assert sent.headers["User-agent"].startswith("stablevoy-python/1.5.0 Python/")
     assert sent.timeout == 30.0
     assert json.loads(sent.body or b"") == {
         "amountUsdCents": 1999,
@@ -41,6 +41,51 @@ def test_sends_only_the_fields_that_are_set() -> None:
     assert "Idempotency-key" not in t.opener.last.headers
     t.client.invoices.create(700, external_reference="order-7")
     assert json.loads(t.opener.last.body or b"") == {"amountUsdCents": 700, "externalReference": "order-7"}
+
+
+def test_sends_the_lifetime_of_the_invoice_when_given() -> None:
+    t = client(answer(201, example("POST", "/v1/invoices", 201)))
+    t.client.invoices.create(700, expires_in_minutes=1440)
+    assert json.loads(t.opener.last.body or b"") == {"amountUsdCents": 700, "expiresInMinutes": 1440}
+
+
+@pytest.mark.parametrize("minutes", [1.5, True, "60"])
+def test_refuses_a_lifetime_that_is_no_whole_number(minutes: object) -> None:
+    t = client()
+    with pytest.raises(ValueError, match="expires_in_minutes"):
+        t.client.invoices.create(700, expires_in_minutes=minutes)  # type: ignore[arg-type]
+    assert t.opener.sent == []
+
+
+def test_cancels_an_invoice_and_reads_it_back() -> None:
+    invoice = {**example("POST", "/v1/invoices/{invoiceId}/cancel", 200), "status": InvoiceStatus.CANCELLED}
+    t = client(answer(200, invoice))
+    result = t.client.invoices.cancel(INVOICE_ID)
+    sent = t.opener.last
+    assert (sent.method, sent.url) == ("POST", f"https://api.stablevoy.com/v1/invoices/{INVOICE_ID}/cancel")
+    assert "Idempotency-key" not in sent.headers
+    assert result.status == "cancelled"
+    assert not InvoiceStatus.is_paid(result.status)
+
+
+def test_reports_an_invoice_that_can_no_longer_be_cancelled() -> None:
+    t = client(
+        answer(
+            409, problem(409, "invoice_not_cancellable", "Only an invoice that is still waiting for its first payment can be cancelled.")
+        )
+    )
+    with pytest.raises(ApiError) as raised:
+        t.client.invoices.cancel(INVOICE_ID)
+    assert (raised.value.status, raised.value.code) == (409, ApiError.INVOICE_NOT_CANCELLABLE)
+    assert len(t.opener.sent) == 1
+
+
+@pytest.mark.parametrize("invoice_id", ["..", "../stores", ""])
+def test_refuses_to_cancel_an_invoice_id_that_is_no_uuid(invoice_id: str) -> None:
+    t = client()
+    with pytest.raises(ValueError, match="UUID"):
+        t.client.invoices.cancel(invoice_id)
+    assert t.opener.sent == []
 
 
 @pytest.mark.parametrize("amount", [0, -1, 19.99, True, "1999"])

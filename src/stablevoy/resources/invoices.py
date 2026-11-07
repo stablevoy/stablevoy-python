@@ -8,6 +8,8 @@ from stablevoy.model.created_invoice import CreatedInvoice
 from stablevoy.model.fields import Fields
 from stablevoy.model.invoice import Invoice
 from stablevoy.model.invoice_page import InvoicePage
+from stablevoy.model.invoice_summary import InvoiceSummary
+from stablevoy.model.summary_period import SummaryPeriod
 
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)
 _DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -98,6 +100,29 @@ class Invoices:
             if value is not None:
                 query[key] = value
         return InvoicePage.from_fields(Fields.of(self._transport.get("/v1/invoices", query), "invoices"))
+
+    def summary(self, *, period: str | None = None, created_from: str | None = None, created_to: str | None = None) -> InvoiceSummary:
+        """
+        Totals of the invoices created in a range of UTC days: counts per status, the invoiced amount and the money
+        received, also per network and token. Pass a period (SummaryPeriod) or both days as YYYY-MM-DD:
+        ``summary(period=SummaryPeriod.LAST_7_DAYS)`` or ``summary(created_from="2026-10-01", created_to="2026-10-31")``.
+        One request covers at most 92 days, so ask for a year in four parts; a longer range is refused with
+        ApiError.INVALID_INVOICE_FILTER. The API allows 30 calls a minute per store.
+        """
+        has_days = created_from is not None or created_to is not None
+        if (period is not None) == has_days:
+            raise ValueError("Pass either period or both created_from and created_to")
+        query: dict[str, str | int] = {}
+        if period is not None:
+            if period not in SummaryPeriod.ALL:
+                raise ValueError(f"period must be one of {', '.join(SummaryPeriod.ALL)}")
+            query["period"] = period
+        else:
+            for name, key, day in (("created_from", "createdFrom", created_from), ("created_to", "createdTo", created_to)):
+                if day is None or not _DAY.fullmatch(day):
+                    raise ValueError(f"{name} must be a date as YYYY-MM-DD")
+                query[key] = day
+        return InvoiceSummary.from_fields(Fields.of(self._transport.get("/v1/invoices/summary", query), "summary"))
 
     def all(
         self,

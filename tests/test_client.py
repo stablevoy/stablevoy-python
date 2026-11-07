@@ -29,6 +29,9 @@ LIMITS = {
     "defaultInvoiceLifetimeMinutes": 60,
     "minInvoiceLifetimeMinutes": 15,
     "maxInvoiceLifetimeMinutes": 10080,
+    "apiKeysPerStore": {"plugin": 1, "mcp": 5, "api": 10},
+    "openInvoicesPerStore": 1000,
+    "invoicesPerMinutePerStore": 60,
 }
 
 
@@ -79,7 +82,7 @@ def test_names_the_integration_in_the_user_agent() -> None:
 
 
 def test_exports_the_version() -> None:
-    assert stablevoy.__version__ == "1.5.0"
+    assert stablevoy.__version__ == "1.6.0"
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -87,7 +90,7 @@ class _Handler(BaseHTTPRequestHandler):
         if self.path == "/v1/limits":
             self._reply(
                 200,
-                b'{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000,"defaultInvoiceLifetimeMinutes":60,"minInvoiceLifetimeMinutes":15,"maxInvoiceLifetimeMinutes":10080}',
+                b'{"minInvoiceUsdCents":500,"maxInvoiceUsdCents":100000,"defaultInvoiceLifetimeMinutes":60,"minInvoiceLifetimeMinutes":15,"maxInvoiceLifetimeMinutes":10080,"apiKeysPerStore":{"plugin":1,"mcp":5,"api":10},"openInvoicesPerStore":1000,"invoicesPerMinutePerStore":60}',
             )
         elif self.path == "/v1/store":
             self.send_response(302)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from stablevoy.model.api_keys_per_store import ApiKeysPerStore
 from stablevoy.model.fields import Fields
 
 
@@ -17,6 +18,11 @@ class Limits:
     """The lower bound of expires_in_minutes and of a store's payment window."""
     max_invoice_lifetime_minutes: int
     """The upper bound of expires_in_minutes and of a store's payment window."""
+    api_keys_per_store: ApiKeysPerStore
+    open_invoices_per_store: int
+    """Invoices awaiting payment one store may have at once; over it invoices.create() fails with ApiError.OPEN_INVOICE_LIMIT_REACHED."""
+    invoices_per_minute_per_store: int
+    """New invoices one store may create per minute; over it the API answers 429 (RateLimitedError)."""
 
     @classmethod
     def from_fields(cls, f: Fields) -> Limits:
@@ -26,4 +32,7 @@ class Limits:
             f.integer("defaultInvoiceLifetimeMinutes"),
             f.integer("minInvoiceLifetimeMinutes"),
             f.integer("maxInvoiceLifetimeMinutes"),
+            ApiKeysPerStore.from_fields(f.child("apiKeysPerStore")),
+            f.integer("openInvoicesPerStore"),
+            f.integer("invoicesPerMinutePerStore"),
         )

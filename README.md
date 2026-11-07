@@ -69,6 +69,36 @@ except ApiError as error:
 
 Money that still arrives after a cancel reaches your payout wallet as always and makes the invoice `paid_late`.
 
+A store can have up to 1,000 invoices awaiting payment at once; over that `invoices.create()` fails with `ApiError.OPEN_INVOICE_LIMIT_REACHED`, so cancel the ones you no longer need. `stablevoy.platform.limits()` gives this and the other per-store limits.
+
+## Totals for a period
+
+Count the invoices of a period and add up what they brought, instead of walking the list. Pass a ready-made period or your own UTC days; one request covers at most 92 days, so ask for a year in four parts.
+
+```python
+from stablevoy import SummaryPeriod
+
+week = stablevoy.invoices.summary(period=SummaryPeriod.LAST_7_DAYS)
+print(week.invoice_count, week.invoices_by_status["paid"], week.invoiced_usd_cents, week.received_usd_micros)
+for total in week.by_network:
+    print(total.network, total.token, total.received_usd_micros)
+
+october = stablevoy.invoices.summary(created_from="2026-10-01", created_to="2026-10-31")
+```
+
+`invoiced_usd_cents` leaves out cancelled and expired invoices. `received_usd_micros` (millionths of a dollar, as a string) counts the confirmed payments that passed sanctions screening.
+
+## Unmatched transfers
+
+On Tron the buyer pays your own wallet and the last digits of the amount pick the invoice. A transfer whose amount matched no invoice, usually from an exchange that took its fee out of it, is listed here. Attach it to an invoice in the Stablevoy dashboard; an API key can only read the list.
+
+```python
+for transfer in stablevoy.unmatched_transfers.list():
+    print(transfer.amount_usd_micros, transfer.from_address, transfer.explorer_tx_url + transfer.tx_hash.removeprefix("0x"))
+```
+
+The payout wallet belongs to your account, not to one store, so each transfer has `shared_with_stores`: 1 means it is certainly this store's, more means it may belong to any of that many of your stores.
+
 ## Check the store before going live
 
 Invoices need a payout wallet for at least one network the store accepts; without one every invoice is refused with `payout_address_not_set`. An EVM payout wallet that is a smart contract wallet or an EIP-7702 delegation must be confirmed in the dashboard, and confirmed again when it changes; until then new invoices leave out the EVM networks, and a store with nothing else is refused with `payout_address_unacknowledged`. Read the store of the key to find out in advance, and tell the merchant about networks buyers will not be offered:

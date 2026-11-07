@@ -10,15 +10,17 @@ from stablevoy.http.transport import Transport
 from stablevoy.resources.invoices import Invoices
 from stablevoy.resources.platform import Platform
 from stablevoy.resources.stores import Stores
+from stablevoy.resources.unmatched_transfers import UnmatchedTransfers
 
 
 class Stablevoy:
     """The Stablevoy API: ``stablevoy = Stablevoy.create(os.environ["STABLEVOY_API_KEY"])``."""
 
-    def __init__(self, invoices: Invoices, stores: Stores, platform: Platform) -> None:
+    def __init__(self, invoices: Invoices, stores: Stores, platform: Platform, unmatched_transfers: UnmatchedTransfers) -> None:
         self.invoices = invoices
         self.stores = stores
         self.platform = platform
+        self.unmatched_transfers = unmatched_transfers
 
     @classmethod
     def create(
@@ -46,4 +48,4 @@ class Stablevoy:
 
     @classmethod
     def from_transport(cls, transport: Transport) -> Stablevoy:
-        return cls(Invoices(transport), Stores(transport), Platform(transport))
+        return cls(Invoices(transport), Stores(transport), Platform(transport), UnmatchedTransfers(transport))

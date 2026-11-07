@@ -25,6 +25,12 @@ class ApiError(StablevoyError):
     INVALID_INVOICE_LIFETIME = "invalid_invoice_lifetime"
     """expires_in_minutes is outside the bounds platform.limits() gives (15 to 10080 minutes)."""
 
+    OPEN_INVOICE_LIMIT_REACHED = "open_invoice_limit_reached"
+    """The store already has as many invoices awaiting payment as platform.limits() allows: cancel unused ones or let them expire."""
+
+    INVALID_INVOICE_FILTER = "invalid_invoice_filter"
+    """A list or summary filter the API refuses, such as a summary range longer than 92 days or one that ends before it starts."""
+
     def __init__(
         self,
         *,

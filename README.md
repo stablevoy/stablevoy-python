@@ -183,6 +183,10 @@ from stablevoy import RetryPolicy, Stablevoy
 stablevoy = Stablevoy.create(api_key, retries=RetryPolicy(max_retries=3, max_wait_seconds=30), timeout_seconds=10)
 ```
 
+## Questions and bugs
+
+Ask questions in [GitHub Discussions](https://github.com/orgs/stablevoy/discussions/categories/sdks), category SDKs. Open an issue in this repository for a bug, with the version and the smallest example that shows it. Never paste a key, not even a test one.
+
 ## Links
 
 - [API reference](https://stablevoy.com/docs/api/)

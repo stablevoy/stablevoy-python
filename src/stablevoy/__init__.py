@@ -17,6 +17,8 @@ from stablevoy.errors.unexpected_response_error import UnexpectedResponseError
 from stablevoy.errors.validation_error import ValidationError
 from stablevoy.http.retry_policy import RetryPolicy
 from stablevoy.http.transport import Transport
+from stablevoy.keys.key_check import KeyCheck
+from stablevoy.keys.key_format import check_api_key, check_webhook_secret
 from stablevoy.model.api_keys_per_store import ApiKeysPerStore
 from stablevoy.model.connected_store import ConnectedStore
 from stablevoy.model.created_invoice import CreatedInvoice
@@ -52,6 +54,7 @@ __all__ = [
     "InvoiceSource",
     "InvoiceStatus",
     "InvoiceSummary",
+    "KeyCheck",
     "Limits",
     "MaintenanceError",
     "Network",
@@ -78,4 +81,6 @@ __all__ = [
     "WebhookEvent",
     "WebhookVerifier",
     "__version__",
+    "check_api_key",
+    "check_webhook_secret",
 ]

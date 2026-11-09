@@ -49,8 +49,8 @@ def test_redeems_a_connect_code_without_an_api_key() -> None:
 @pytest.mark.parametrize(
     ("change", "message"),
     [
-        ({"apiKey": "pk_live_1"}, "connected.apiKey is not an API key (sk_live_ or sk_test_)"),
-        ({"webhookSecret": "secret"}, "connected.webhookSecret is not a webhook secret (whsec_)"),
+        ({"apiKey": "pk_live_1"}, "connected.apiKey is not an API key (svk_live_, svk_test_, or the older sk_live_, sk_test_)"),
+        ({"webhookSecret": "secret"}, "connected.webhookSecret is not a webhook secret (svwhsec_, or the older whsec_)"),
         ({"store": None}, "connected.store is not a JSON object"),
         ({"store": {"id": "x"}}, "connected.store.name is missing"),
     ],

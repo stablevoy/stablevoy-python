@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from stablevoy.errors.unexpected_response_error import UnexpectedResponseError
+from stablevoy.keys.key_check import KeyCheck
+from stablevoy.keys.key_format import check_api_key, check_webhook_secret
 from stablevoy.model.fields import Fields
 
 
@@ -18,10 +20,11 @@ class ConnectedStore:
     @classmethod
     def from_fields(cls, f: Fields) -> ConnectedStore:
         api_key = f.string("apiKey")
-        if not api_key.startswith(("sk_live_", "sk_test_")):
-            raise UnexpectedResponseError(f"{f.path_of('apiKey')} is not an API key (sk_live_ or sk_test_)")
+        if check_api_key(api_key) is not KeyCheck.OK:
+            older = "or the older sk_live_, sk_test_"
+            raise UnexpectedResponseError(f"{f.path_of('apiKey')} is not an API key (svk_live_, svk_test_, {older})")
         secret = f.string("webhookSecret")
-        if not secret.startswith("whsec_"):
-            raise UnexpectedResponseError(f"{f.path_of('webhookSecret')} is not a webhook secret (whsec_)")
+        if check_webhook_secret(secret) is not KeyCheck.OK:
+            raise UnexpectedResponseError(f"{f.path_of('webhookSecret')} is not a webhook secret (svwhsec_, or the older whsec_)")
         store = f.child("store")
         return cls(api_key, secret, store.string("id"), store.string("name"))

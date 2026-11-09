@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+
+- Stablevoy is moving to its own key formats: API keys `svk_live_...` / `svk_test_...` and webhook signing secrets `svwhsec_...`, each ending in a checksum. The SDK accepts them and the older `sk_live_` / `sk_test_` / `whsec_` in connect answers; older keys keep working.
+- `check_api_key(value)` and `check_webhook_secret(value)` return a `KeyCheck`: `OK`, `MISTYPED` (a new-format key whose checksum does not match, so a character is wrong or missing) or `NOT_A_KEY`.
+
 ## 1.6.0
 
 - `invoices.summary(period=...)` or `invoices.summary(created_from=..., created_to=...)`: totals of the invoices created in a range of UTC days (`InvoiceSummary`), with the count per status, the invoiced amount and the money received, also per network and token (`NetworkTotal`). Periods are in `SummaryPeriod`; one request covers at most 92 days, and a longer range is refused with `ApiError.INVALID_INVOICE_FILTER`.

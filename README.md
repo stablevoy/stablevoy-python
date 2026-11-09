@@ -158,6 +158,19 @@ def stablevoy_webhook():
 
 Django: `verifier.verify(request.body, request.headers.get("X-Stablevoy-Signature"))`. FastAPI: `verifier.verify(await request.body(), request.headers.get("X-Stablevoy-Signature"))`.
 
+## Check a pasted key
+
+API keys are `svk_live_...` or `svk_test_...` and webhook signing secrets `svwhsec_...`; both end in a checksum. Keys made before this format (`sk_live_`, `sk_test_`, `whsec_`) keep working.
+
+```python
+from stablevoy import KeyCheck, check_api_key
+
+if check_api_key(value) is KeyCheck.MISTYPED:
+    print("A character is wrong or missing: copy the key again from the dashboard.")
+```
+
+`check_api_key` and `check_webhook_secret` answer `OK`, `MISTYPED` or `NOT_A_KEY`, without any request.
+
 ## Errors and retries
 
 Every error extends `StablevoyError`. API errors are `ApiError` with the HTTP `status`, a stable `code`, a readable `detail` and a link to the [error catalog](https://stablevoy.com/docs/api/errors/); the ones you may want to handle on their own are `AuthenticationError`, `ValidationError` (with `issues`), `NotFoundError`, `RateLimitedError` and `MaintenanceError`. `TransportError` means no answer at all.

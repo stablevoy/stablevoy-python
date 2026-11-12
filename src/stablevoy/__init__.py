@@ -33,6 +33,7 @@ from stablevoy.model.network import Network
 from stablevoy.model.network_total import NetworkTotal
 from stablevoy.model.payment import Payment
 from stablevoy.model.payout_addresses import PayoutAddresses
+from stablevoy.model.payout_sources import PayoutSources
 from stablevoy.model.pricing import Pricing
 from stablevoy.model.store import Store
 from stablevoy.model.summary_period import SummaryPeriod
@@ -62,6 +63,7 @@ __all__ = [
     "NotFoundError",
     "Payment",
     "PayoutAddresses",
+    "PayoutSources",
     "Pricing",
     "ProblemIssue",
     "RateLimitedError",

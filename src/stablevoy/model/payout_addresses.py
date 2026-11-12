@@ -8,8 +8,8 @@ from stablevoy.model.fields import Fields
 @dataclass(frozen=True)
 class PayoutAddresses:
     """
-    The account's payout wallets per network family, None when not set. Read only: they change in the dashboard with a
-    wallet signature.
+    Payout wallets per network family, None when not set. Read only: they change in the dashboard with a wallet
+    signature.
     """
 
     evm: str | None

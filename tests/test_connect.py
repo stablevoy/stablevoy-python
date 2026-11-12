@@ -20,6 +20,14 @@ from .support import FakeOpener, answer, client, example, problem
 SITE = "https://shop.example.com"
 
 
+def exchange_answer() -> dict[str, object]:
+    """
+    The exchange example of the API document with whole secrets: the document shows shortened ones (svk_live_4f9a...e0f9),
+    which the SDK rightly refuses, so a real-looking answer uses the older formats the SDK still accepts.
+    """
+    return {**example("POST", "/v1/connect/exchange", 200), "apiKey": "sk_live_example", "webhookSecret": "whsec_example"}
+
+
 def connect(*answers: HttpAnswer | OSError) -> tuple[StablevoyConnect, FakeOpener, list[float]]:
     opener = FakeOpener(list(answers))
     slept: list[float] = []
@@ -27,7 +35,7 @@ def connect(*answers: HttpAnswer | OSError) -> tuple[StablevoyConnect, FakeOpene
 
 
 def test_redeems_a_connect_code_without_an_api_key() -> None:
-    example_answer = example("POST", "/v1/connect/exchange", 200)
+    example_answer = exchange_answer()
     client_, opener, _ = connect(answer(200, example_answer))
     store = client_.exchange(code="code-1", code_verifier="verifier-1", site=SITE)
     sent = opener.last
@@ -56,7 +64,7 @@ def test_redeems_a_connect_code_without_an_api_key() -> None:
     ],
 )
 def test_refuses_an_answer_without_a_usable_key_secret_or_store(change: dict[str, object], message: str) -> None:
-    client_, _, _ = connect(answer(200, {**example("POST", "/v1/connect/exchange", 200), **change}))
+    client_, _, _ = connect(answer(200, {**exchange_answer(), **change}))
     with pytest.raises(UnexpectedResponseError, match=message.replace("(", r"\(").replace(")", r"\)")):
         client_.exchange(code="c", code_verifier="v", site=SITE)
 

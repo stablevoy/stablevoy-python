@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from stablevoy import ApiError, InvoiceSource, InvoiceStatus
+from stablevoy import ApiError, InvoiceSource, InvoiceStatus, __version__
 
 from .support import INVOICE_ID, answer, client, example, problem
 
@@ -21,7 +21,7 @@ def test_creates_an_invoice_with_the_key_the_idempotency_key_and_json() -> None:
     assert sent.headers["Authorization"] == "Bearer sk_test_key"
     assert sent.headers["Idempotency-key"] == "order-1042"
     assert sent.headers["Content-type"] == "application/json"
-    assert sent.headers["User-agent"].startswith("stablevoy-python/1.7.0 Python/")
+    assert sent.headers["User-agent"].startswith(f"stablevoy-python/{__version__} Python/")
     assert sent.timeout == 30.0
     assert json.loads(sent.body or b"") == {
         "amountUsdCents": 1999,

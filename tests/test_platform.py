@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 
-from stablevoy import ApiError, Store, UnexpectedResponseError
+from stablevoy import ApiError, PayoutSources, Store, UnexpectedResponseError
 
 from .support import answer, client, example, example_value
 
@@ -54,6 +56,29 @@ def test_reads_the_payout_addresses_of_the_account() -> None:
     result = client(answer(200, {**store, "payoutAddresses": {"evm": "0x" + "ab" * 20, "tron": None}})).client.stores.current()
     assert (result.payout_addresses.evm, result.payout_addresses.tron) == ("0x" + "ab" * 20, None)
     del store["payoutAddresses"]
+    with pytest.raises(UnexpectedResponseError):
+        client(answer(200, store)).client.stores.current()
+
+
+def test_reads_where_each_payout_wallet_comes_from_the_account_wallets_and_the_archive_date() -> None:
+    store = example("GET", "/v1/store", 200)
+    changed = {
+        **store,
+        "payoutSources": {"evm": PayoutSources.STORE, "tron": None},
+        "accountPayoutAddresses": {"evm": "0x" + "cd" * 20, "tron": None},
+        "archivedAt": "2026-11-10T10:00:00.000Z",
+    }
+    result = client(answer(200, changed)).client.stores.current()
+    assert (result.payout_sources.evm, result.payout_sources.tron) == ("store", None)
+    assert result.account_payout_addresses.evm == "0x" + "cd" * 20
+    assert result.archived_at == datetime(2026, 11, 10, 10, 0, tzinfo=UTC)
+    assert client(answer(200, store)).client.stores.current().archived_at is None
+
+
+@pytest.mark.parametrize("field", ["payoutSources", "accountPayoutAddresses", "archivedAt"])
+def test_refuses_a_store_without_the_new_payout_fields(field: str) -> None:
+    store = example("GET", "/v1/store", 200)
+    del store[field]
     with pytest.raises(UnexpectedResponseError):
         client(answer(200, store)).client.stores.current()
 

@@ -6,6 +6,7 @@ from typing import ClassVar
 
 from stablevoy.model.fields import Fields
 from stablevoy.model.payout_addresses import PayoutAddresses
+from stablevoy.model.payout_sources import PayoutSources
 
 
 @dataclass(frozen=True)
@@ -28,25 +29,35 @@ class Store:
     default_return_url: str | None
     created_at: datetime
     networks_without_payout: tuple[str, ...]
-    """Enabled networks with no payout wallet for their family (EVM or Tron) on the account: buyers are not offered them."""
+    """
+    Enabled networks with no payout wallet for their family (EVM or Tron), neither the store's own nor the account's:
+    buyers are not offered them.
+    """
     connected_platform: str | None
     """The plugin connected to the store in one click (woocommerce, edd, whmcs), or None."""
     evm_payout_status: str | None
     """
-    The EVM payout wallet as last read on every EVM network: plain (a regular wallet), acknowledged (a smart contract
+    The EVM payout wallet this store uses (its own or the account's) as last read on every EVM network: plain (a regular
+    wallet), acknowledged (a smart contract
     wallet or EIP-7702 delegation the merchant confirmed), unacknowledged (not confirmed, or changed since: the EVM
     networks are left out of new invoices until the merchant reviews it in the dashboard), unchecked (not read yet), or
-    None when the account has no EVM payout wallet.
+    None when the store has no EVM payout wallet.
     """
     evm_networks_blocked: tuple[str, ...]
     """Enabled EVM networks new invoices leave out because evm_payout_status is unacknowledged; empty otherwise."""
     payout_addresses: PayoutAddresses
-    """The account's payout wallets per network family."""
+    """The payout wallets this store's new invoices use per network family: the store's own, else the account's."""
     invoice_lifetime_minutes: int | None
     """
     The store's payment window: how long its invoices can be paid, in minutes, when the request names none; None means
     the platform default.
     """
+    payout_sources: PayoutSources
+    """Where each payout wallet comes from: PayoutSources.STORE or PayoutSources.ACCOUNT, None without one."""
+    account_payout_addresses: PayoutAddresses
+    """The account's payout wallets, also when the store uses its own."""
+    archived_at: datetime | None
+    """When the store was archived; None while it is not. The keys of an archived store are revoked."""
 
     def can_accept_payments(self) -> bool:
         """
@@ -83,4 +94,7 @@ class Store:
             f.strings("evmNetworksBlocked"),
             PayoutAddresses.from_fields(f.child("payoutAddresses")),
             f.nullable_integer("invoiceLifetimeMinutes"),
+            PayoutSources.from_fields(f.child("payoutSources")),
+            PayoutAddresses.from_fields(f.child("accountPayoutAddresses")),
+            f.nullable_date("archivedAt"),
         )

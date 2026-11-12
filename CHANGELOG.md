@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0
+
+- A store can pay out to its own address instead of the account one (set in the dashboard). `Store.payout_addresses` are now the addresses this store's new invoices use; `Store.payout_sources` (`PayoutSources`) says for each family whether it is the store's own (`PayoutSources.STORE`) or the account's (`PayoutSources.ACCOUNT`); `Store.account_payout_addresses` lists the account addresses. `evm_payout_status` and `evm_networks_blocked` follow the EVM address the store uses.
+- `Store.archived_at`: when the store was archived, None while it is not.
+- The webhook types `api_key.leaked` and `webhook_secret.leaked` are documented, and `store.payout_attention` carries `payout.source`.
+- These need the API with store payout addresses (November 2026); an older answer without the new store fields is refused as an unexpected response.
+
 ## 1.7.0
 
 - Stablevoy is moving to its own key formats: API keys `svk_live_...` / `svk_test_...` and webhook signing secrets `svwhsec_...`, each ending in a checksum. The SDK accepts them and the older `sk_live_` / `sk_test_` / `whsec_` in connect answers; older keys keep working.

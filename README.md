@@ -97,7 +97,7 @@ for transfer in stablevoy.unmatched_transfers.list():
     print(transfer.amount_usd_micros, transfer.from_address, transfer.explorer_tx_url + transfer.tx_hash.removeprefix("0x"))
 ```
 
-The payout wallet belongs to your account, not to one store, so each transfer has `shared_with_stores`: 1 means it is certainly this store's, more means it may belong to any of that many of your stores.
+Several of your stores can pay out to the same wallet, so each transfer has `shared_with_stores`: how many active stores offer this network and use that wallet. 1 means it is certainly this store's, more means it may belong to any of that many of your stores.
 
 ## Check the store before going live
 
@@ -157,6 +157,17 @@ def stablevoy_webhook():
 ```
 
 Django: `verifier.verify(request.body, request.headers.get("X-Stablevoy-Signature"))`. FastAPI: `verifier.verify(await request.body(), request.headers.get("X-Stablevoy-Signature"))`.
+
+An endpoint that keeps failing is paused: after 10 failed attempts `store.webhook_health.status` is `WebhookHealth.FAILING` and `pauses_at` says when it will be paused; after 24 hours of failures it is `WebhookHealth.PAUSED` and new events wait up to 30 days. The merchant resumes it in the dashboard. Show it in your settings page so the merchant sees it before orders go unconfirmed:
+
+```python
+from stablevoy import WebhookHealth
+
+health = stablevoy.stores.current().webhook_health
+if health is not None and health.status == WebhookHealth.PAUSED:
+    # Webhooks are paused: tell the merchant to fix the endpoint and resume it in the Stablevoy dashboard.
+    ...
+```
 
 ## Check a pasted key
 

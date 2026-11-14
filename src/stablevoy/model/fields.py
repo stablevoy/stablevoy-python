@@ -78,6 +78,10 @@ class Fields:
     def child(self, key: str) -> Fields:
         return Fields.of(self._value(key), f"{self._path}.{key}")
 
+    def nullable_child(self, key: str) -> Fields | None:
+        """An object or None; the key itself must be there."""
+        return None if self._value(key) is None else self.child(key)
+
     def path_of(self, key: str) -> str:
         """Where a field of this object is, for error messages."""
         return f"{self._path}.{key}"

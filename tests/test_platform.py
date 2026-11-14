@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from stablevoy import ApiError, PayoutSources, Store, UnexpectedResponseError
+from stablevoy import ApiError, PayoutSources, Store, UnexpectedResponseError, WebhookHealth
 
 from .support import answer, client, example, example_value
 
@@ -75,7 +75,42 @@ def test_reads_where_each_payout_wallet_comes_from_the_account_wallets_and_the_a
     assert client(answer(200, store)).client.stores.current().archived_at is None
 
 
-@pytest.mark.parametrize("field", ["payoutSources", "accountPayoutAddresses", "archivedAt"])
+def test_reads_the_state_of_the_webhook_endpoint_none_without_a_webhook_url() -> None:
+    store = example("GET", "/v1/store", 200)
+    paused = {
+        "status": WebhookHealth.PAUSED,
+        "failingSince": "2026-11-12T10:00:00.000Z",
+        "failedAttempts": 31,
+        "pausesAt": None,
+        "pausedAt": "2026-11-13T10:00:00.000Z",
+        "pauseReason": "Endpoint answered HTTP 500",
+    }
+    health = client(answer(200, {**store, "webhookHealth": paused})).client.stores.current().webhook_health
+    assert health == WebhookHealth(
+        "paused",
+        datetime(2026, 11, 12, 10, 0, tzinfo=UTC),
+        31,
+        None,
+        datetime(2026, 11, 13, 10, 0, tzinfo=UTC),
+        "Endpoint answered HTTP 500",
+    )
+    failing = {
+        **paused,
+        "status": WebhookHealth.FAILING,
+        "failedAttempts": 12,
+        "pausesAt": "2026-11-13T10:00:00.000Z",
+        "pausedAt": None,
+        "pauseReason": None,
+    }
+    failing_health = client(answer(200, {**store, "webhookHealth": failing})).client.stores.current().webhook_health
+    assert failing_health is not None
+    assert failing_health.pauses_at == datetime(2026, 11, 13, 10, 0, tzinfo=UTC)
+    assert client(answer(200, {**store, "webhookHealth": None})).client.stores.current().webhook_health is None
+    with pytest.raises(UnexpectedResponseError):
+        client(answer(200, {**store, "webhookHealth": {**failing, "failedAttempts": "many"}})).client.stores.current()
+
+
+@pytest.mark.parametrize("field", ["webhookHealth", "payoutSources", "accountPayoutAddresses", "archivedAt"])
 def test_refuses_a_store_without_the_new_payout_fields(field: str) -> None:
     store = example("GET", "/v1/store", 200)
     del store[field]

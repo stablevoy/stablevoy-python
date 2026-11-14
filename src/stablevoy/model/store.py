@@ -7,6 +7,7 @@ from typing import ClassVar
 from stablevoy.model.fields import Fields
 from stablevoy.model.payout_addresses import PayoutAddresses
 from stablevoy.model.payout_sources import PayoutSources
+from stablevoy.model.webhook_health import WebhookHealth
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,8 @@ class Store:
     """The account's payout wallets, also when the store uses its own."""
     archived_at: datetime | None
     """When the store was archived; None while it is not. The keys of an archived store are revoked."""
+    webhook_health: WebhookHealth | None
+    """State of the webhook endpoint (failing, paused); None when the store has no webhook URL. Resumed only in the dashboard."""
 
     def can_accept_payments(self) -> bool:
         """
@@ -97,4 +100,9 @@ class Store:
             PayoutSources.from_fields(f.child("payoutSources")),
             PayoutAddresses.from_fields(f.child("accountPayoutAddresses")),
             f.nullable_date("archivedAt"),
+            _webhook_health(f.nullable_child("webhookHealth")),
         )
+
+
+def _webhook_health(f: Fields | None) -> WebhookHealth | None:
+    return None if f is None else WebhookHealth.from_fields(f)

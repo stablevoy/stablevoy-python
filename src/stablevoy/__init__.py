@@ -39,6 +39,7 @@ from stablevoy.model.store import Store
 from stablevoy.model.summary_period import SummaryPeriod
 from stablevoy.model.token import Token
 from stablevoy.model.unmatched_transfer import UnmatchedTransfer
+from stablevoy.model.webhook_health import WebhookHealth
 from stablevoy.webhook.webhook_event import WebhookEvent
 from stablevoy.webhook.webhook_verifier import WebhookVerifier
 
@@ -81,6 +82,7 @@ __all__ = [
     "UnmatchedTransfer",
     "ValidationError",
     "WebhookEvent",
+    "WebhookHealth",
     "WebhookVerifier",
     "__version__",
     "check_api_key",

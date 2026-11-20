@@ -7,6 +7,7 @@ from stablevoy.http.create_urllib_transport import create_urllib_transport
 from stablevoy.http.opener import Opener
 from stablevoy.http.retry_policy import RetryPolicy
 from stablevoy.http.transport import Transport
+from stablevoy.resources.currencies import Currencies
 from stablevoy.resources.invoices import Invoices
 from stablevoy.resources.platform import Platform
 from stablevoy.resources.stores import Stores
@@ -16,11 +17,14 @@ from stablevoy.resources.unmatched_transfers import UnmatchedTransfers
 class Stablevoy:
     """The Stablevoy API: ``stablevoy = Stablevoy.create(os.environ["STABLEVOY_API_KEY"])``."""
 
-    def __init__(self, invoices: Invoices, stores: Stores, platform: Platform, unmatched_transfers: UnmatchedTransfers) -> None:
+    def __init__(
+        self, invoices: Invoices, stores: Stores, platform: Platform, unmatched_transfers: UnmatchedTransfers, currencies: Currencies
+    ) -> None:
         self.invoices = invoices
         self.stores = stores
         self.platform = platform
         self.unmatched_transfers = unmatched_transfers
+        self.currencies = currencies
 
     @classmethod
     def create(
@@ -48,4 +52,4 @@ class Stablevoy:
 
     @classmethod
     def from_transport(cls, transport: Transport) -> Stablevoy:
-        return cls(Invoices(transport), Stores(transport), Platform(transport), UnmatchedTransfers(transport))
+        return cls(Invoices(transport), Stores(transport), Platform(transport), UnmatchedTransfers(transport), Currencies(transport))

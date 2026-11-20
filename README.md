@@ -52,6 +52,19 @@ for invoice in stablevoy.invoices.all(source=InvoiceSource.PAYMENT_LINK, created
     print(invoice.id, invoice.source.kind if invoice.source else None)
 ```
 
+## Prices in your own currency
+
+A shop that prices in EUR, GBP, JPY or another supported currency sends the price as it is, in the smallest unit of the currency, instead of the US cents:
+
+```python
+created = stablevoy.invoices.create(amount=4999, currency="EUR", external_reference="order-1043")  # 49.99 EUR
+
+created.invoice.amount_usd_cents  # the price converted once, at creation, rounded up to the cent
+created.invoice.pricing  # InvoicePricing: currency, amount, exponent, usd_per_unit "1.0992", rate_source "ecb", rate_at
+```
+
+The buyer pays USDC or USDT for `amount_usd_cents`; the rate is kept with the invoice and sent in every webhook. `pricing` is None on an invoice priced in USD. `stablevoy.currencies.list()` gives the supported currencies with their exponent and the market rate (ECB reference rates, checked against Coinbase); `stablevoy.currencies.for_store(store_id)` adds the store's own fixed rates, set in the dashboard, and `effective`, the rate an invoice would use now. With no usable rate the API refuses the invoice with `ApiError.EXCHANGE_RATE_UNAVAILABLE`.
+
 ## Cancel an unpaid invoice
 
 When the order is cancelled before the buyer pays, cancel its invoice. The payment page then tells the buyer not to pay, and the webhook `invoice.cancelled` is sent. Cancelling it again returns it unchanged.

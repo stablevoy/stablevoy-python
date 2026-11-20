@@ -28,6 +28,15 @@ class ApiError(StablevoyError):
     OPEN_INVOICE_LIMIT_REACHED = "open_invoice_limit_reached"
     """The store already has as many invoices awaiting payment as platform.limits() allows: cancel unused ones or let them expire."""
 
+    EXCHANGE_RATE_UNAVAILABLE = "exchange_rate_unavailable"
+    """
+    No usable rate for the invoice currency right now: the market rate is missing or too old and the store has no own
+    rate. Retry later or price in USD.
+    """
+
+    CURRENCY_NOT_SUPPORTED = "currency_not_supported"
+    """The currency is not one of currencies.list()."""
+
     INVALID_INVOICE_FILTER = "invalid_invoice_filter"
     """A list or summary filter the API refuses, such as a summary range longer than 92 days or one that ends before it starts."""
 

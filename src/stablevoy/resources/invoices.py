@@ -14,6 +14,7 @@ from stablevoy.model.summary_period import SummaryPeriod
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)
 _DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
 _IDEMPOTENCY_KEY = re.compile(r"[\x21-\x7e]{1,255}")
+_CURRENCY = re.compile(r"[A-Z]{3}")
 
 
 class Invoices:
@@ -24,8 +25,10 @@ class Invoices:
 
     def create(
         self,
-        amount_usd_cents: int,
+        amount_usd_cents: int | None = None,
         *,
+        amount: int | None = None,
+        currency: str | None = None,
         external_reference: str | None = None,
         return_url: str | None = None,
         expires_in_minutes: int | None = None,
@@ -35,18 +38,20 @@ class Invoices:
         Creates an invoice. Pass your order id as the idempotency key: a retry with the same key and request returns the
         first invoice (replayed: True) instead of a second one, and only then does this library retry on its own.
 
+        Give the amount either in US cents (amount_usd_cents), or in your own currency: amount in its smallest unit
+        (4999 is 49.99 EUR) with currency, an ISO 4217 code from currencies.list(). The API converts it once, at
+        creation, rounded up to the cent, and keeps the rate in invoice.pricing.
+
         expires_in_minutes: how long the buyer has to pay, 15 to 10080 minutes (7 days). None: the store's payment
         window, else the platform default (platform.limits() tells it). Use a day or more for an invoice sent by email.
         """
-        if not isinstance(amount_usd_cents, int) or isinstance(amount_usd_cents, bool) or amount_usd_cents < 1:
-            raise ValueError("amount_usd_cents must be a positive whole number of US cents, for example 1999 for $19.99")
+        body: dict[str, object] = _amount(amount_usd_cents, amount, currency)
         # What the API accepts; anything else would be refused there, or fail inside http.client on the header.
         if idempotency_key is not None and not _IDEMPOTENCY_KEY.fullmatch(idempotency_key):
             raise ValueError("The idempotency key must be 1 to 255 printable ASCII characters without spaces, such as your order id")
         # The bounds (platform.limits()) are checked by the API, which answers invalid_invoice_lifetime.
         if expires_in_minutes is not None and (not isinstance(expires_in_minutes, int) or isinstance(expires_in_minutes, bool)):
             raise ValueError("expires_in_minutes must be a whole number of minutes, for example 60 or 1440")
-        body: dict[str, object] = {"amountUsdCents": amount_usd_cents}
         if external_reference is not None:
             body["externalReference"] = external_reference
         if return_url is not None:
@@ -156,3 +161,25 @@ def _check_id(invoice_id: str) -> None:
     # Ids are UUIDs; anything else (such as "..") could make the request reach another path with your key.
     if not _UUID.fullmatch(invoice_id):
         raise ValueError("An invoice id is a UUID, like 7c3360b5-e8cc-4775-8a13-7324d4f1296e")
+
+
+def _whole(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
+def _amount(amount_usd_cents: int | None, amount: int | None, currency: str | None) -> dict[str, object]:
+    """The amount part of the body: amountUsdCents, or amount with currency, never both."""
+    if amount_usd_cents is not None:
+        if amount is not None or currency is not None:
+            raise ValueError("Give amount_usd_cents, or amount with currency, not both")
+        if not _whole(amount_usd_cents):
+            raise ValueError("amount_usd_cents must be a positive whole number of US cents, for example 1999 for $19.99")
+        return {"amountUsdCents": amount_usd_cents}
+    if amount is None or currency is None:
+        raise ValueError("Give amount_usd_cents, or amount with currency")
+    if not _whole(amount):
+        raise ValueError("amount must be a positive whole number of the smallest unit of the currency, for example 4999 for 49.99 EUR")
+    # The list of currencies is the API's (currencies.list()); here only the shape of an ISO 4217 code.
+    if not isinstance(currency, str) or not _CURRENCY.fullmatch(currency):
+        raise ValueError("currency must be an ISO 4217 code in capitals, such as EUR")
+    return {"amount": amount, "currency": currency}

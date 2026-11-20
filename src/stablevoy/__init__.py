@@ -22,13 +22,17 @@ from stablevoy.keys.key_format import check_api_key, check_webhook_secret
 from stablevoy.model.api_keys_per_store import ApiKeysPerStore
 from stablevoy.model.connected_store import ConnectedStore
 from stablevoy.model.created_invoice import CreatedInvoice
+from stablevoy.model.currency import Currency
+from stablevoy.model.currency_rate import CurrencyRate
 from stablevoy.model.deposit_address import DepositAddress
 from stablevoy.model.invoice import Invoice
 from stablevoy.model.invoice_page import InvoicePage
+from stablevoy.model.invoice_pricing import InvoicePricing
 from stablevoy.model.invoice_source import InvoiceSource
 from stablevoy.model.invoice_status import InvoiceStatus
 from stablevoy.model.invoice_summary import InvoiceSummary
 from stablevoy.model.limits import Limits
+from stablevoy.model.market_rate import MarketRate
 from stablevoy.model.network import Network
 from stablevoy.model.network_total import NetworkTotal
 from stablevoy.model.payment import Payment
@@ -36,6 +40,7 @@ from stablevoy.model.payout_addresses import PayoutAddresses
 from stablevoy.model.payout_sources import PayoutSources
 from stablevoy.model.pricing import Pricing
 from stablevoy.model.store import Store
+from stablevoy.model.store_rate import StoreRate
 from stablevoy.model.summary_period import SummaryPeriod
 from stablevoy.model.token import Token
 from stablevoy.model.unmatched_transfer import UnmatchedTransfer
@@ -50,15 +55,19 @@ __all__ = [
     "ConfigurationError",
     "ConnectedStore",
     "CreatedInvoice",
+    "Currency",
+    "CurrencyRate",
     "DepositAddress",
     "Invoice",
     "InvoicePage",
+    "InvoicePricing",
     "InvoiceSource",
     "InvoiceStatus",
     "InvoiceSummary",
     "KeyCheck",
     "Limits",
     "MaintenanceError",
+    "MarketRate",
     "Network",
     "NetworkTotal",
     "NotFoundError",
@@ -74,6 +83,7 @@ __all__ = [
     "StablevoyConnect",
     "StablevoyError",
     "Store",
+    "StoreRate",
     "SummaryPeriod",
     "Token",
     "Transport",

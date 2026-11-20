@@ -5,6 +5,7 @@ from datetime import datetime
 
 from stablevoy.model.deposit_address import DepositAddress
 from stablevoy.model.fields import Fields
+from stablevoy.model.invoice_pricing import InvoicePricing
 from stablevoy.model.invoice_source import InvoiceSource
 from stablevoy.model.invoice_status import InvoiceStatus
 from stablevoy.model.payment import Payment
@@ -33,6 +34,11 @@ class Invoice:
     Where the invoice came from; None only on invoices from an API older than 31 October 2026 and on webhook events
     recorded before 3 November 2026, which did not carry it.
     """
+    pricing: InvoicePricing | None = None
+    """
+    The price and rate of an invoice created in another currency than USD (amount_usd_cents is that price converted at
+    creation, rounded up to the cent). None when priced in USD, and on webhook events recorded before 19 November 2026.
+    """
 
     @classmethod
     def from_fields(cls, f: Fields) -> Invoice:
@@ -52,6 +58,7 @@ class Invoice:
             f.objects("depositAddresses", DepositAddress.from_fields),
             f.objects("payments", Payment.from_fields),
             InvoiceSource.from_nullable_fields(None if f.raw()["source"] is None else f.child("source")) if "source" in f.raw() else None,
+            InvoicePricing.from_fields(f.child("pricing")) if f.raw().get("pricing") is not None else None,
         )
 
     def is_paid(self) -> bool:

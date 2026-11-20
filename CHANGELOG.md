@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.10.0
+
+- Invoices priced in another currency: `invoices.create(amount=4999, currency="EUR")` with the amount in the smallest unit of the currency (4999 is 49.99 EUR), instead of `amount_usd_cents`. Give one form or the other, never both; `amount_usd_cents` is now optional for that, and a positional US cents amount works as before. The API converts the price once, at creation, rounded up to the cent, and keeps the rate.
+- `Invoice.pricing` (`InvoicePricing`): the currency, amount, exponent, `usd_per_unit`, `rate_source` (`ecb` or `merchant`) and `rate_at` of an invoice priced in another currency; None for a USD invoice and on webhook events recorded before 19 November 2026.
+- `currencies.list()`: every supported currency (`Currency`) with its exponent and the market rate in use (`MarketRate`). `currencies.for_store(store_id)`: the same with the store's own fixed rates (`StoreRate`) and the rate an invoice of the store would use now (`CurrencyRate`). A store's own rate is set in the dashboard only.
+- New `ApiError.EXCHANGE_RATE_UNAVAILABLE` and `ApiError.CURRENCY_NOT_SUPPORTED`.
+- `Stablevoy` takes `Currencies` as a fifth constructor argument; `Stablevoy.create()` and `Stablevoy.from_transport()` are unchanged.
+
 ## 1.9.0
 
 - `Store.webhook_health` (`WebhookHealth`): the state of the store's webhook endpoint, None when the store has no webhook URL. `status` is `WebhookHealth.ACTIVE`, `WebhookHealth.FAILING` (at least 10 failed attempts, `pauses_at` says when it will be paused if it keeps failing) or `WebhookHealth.PAUSED` (failed for 24 hours; new events wait up to 30 days); also `failing_since`, `failed_attempts`, `paused_at` and `pause_reason`. The merchant resumes a paused endpoint in the dashboard. Needs the API with paused endpoints (November 2026); an older answer without the field is refused as an unexpected response.

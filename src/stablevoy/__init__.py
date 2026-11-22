@@ -20,6 +20,11 @@ from stablevoy.http.transport import Transport
 from stablevoy.keys.key_check import KeyCheck
 from stablevoy.keys.key_format import check_api_key, check_webhook_secret
 from stablevoy.model.api_keys_per_store import ApiKeysPerStore
+from stablevoy.model.checkout_funnel import CheckoutFunnel
+from stablevoy.model.checkout_step import CheckoutStep
+from stablevoy.model.checkout_surface import CheckoutSurface
+from stablevoy.model.checkout_trail import CheckoutTrail
+from stablevoy.model.checkout_trail_step import CheckoutTrailStep
 from stablevoy.model.connected_store import ConnectedStore
 from stablevoy.model.created_invoice import CreatedInvoice
 from stablevoy.model.currency import Currency
@@ -52,6 +57,11 @@ __all__ = [
     "ApiError",
     "ApiKeysPerStore",
     "AuthenticationError",
+    "CheckoutFunnel",
+    "CheckoutStep",
+    "CheckoutSurface",
+    "CheckoutTrail",
+    "CheckoutTrailStep",
     "ConfigurationError",
     "ConnectedStore",
     "CreatedInvoice",

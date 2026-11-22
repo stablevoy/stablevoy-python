@@ -101,6 +101,24 @@ october = stablevoy.invoices.summary(created_from="2026-10-01", created_to="2026
 
 `invoiced_usd_cents` leaves out cancelled and expired invoices. `received_usd_micros` (millionths of a dollar, as a string) counts the confirmed payments that passed sanctions screening.
 
+## Where buyers stop on the payment page
+
+The payment page and the widget note which steps the buyer of an invoice reached, once per invoice and without anything about the buyer (no IP address, cookie, device or wallet). The funnel counts them for the invoices created in a range, with the same periods as the summary; the trail lists the steps of one invoice.
+
+```python
+from stablevoy import CheckoutStep, SummaryPeriod
+
+funnel = stablevoy.stores.checkout_funnel(period=SummaryPeriod.LAST_30_DAYS)
+print(funnel.invoices, funnel.steps[CheckoutStep.OPENED], funnel.steps[CheckoutStep.TX_SENT], funnel.detected, funnel.paid)
+print(funnel.opened_on["page"], funnel.opened_on["widget"])
+
+trail = stablevoy.invoices.checkout_trail(invoice.id)
+for step in trail.steps:
+    print(step.at.isoformat(), step.step, step.surface or "")
+```
+
+Steps come as strings, so a step added to the API later reaches you by its name; `CheckoutStep` holds the known ones. A buyer who pays from another device or by hand may skip page steps, so read the numbers as a guide, not as a count of visits.
+
 ## Unmatched transfers
 
 On Tron the buyer pays your own wallet and the last digits of the amount pick the invoice. A transfer whose amount matched no invoice, usually from an exchange that took its fee out of it, is listed here. Attach it to an invoice in the Stablevoy dashboard; an API key can only read the list.

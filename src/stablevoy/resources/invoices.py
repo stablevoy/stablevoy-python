@@ -4,12 +4,13 @@ import re
 from collections.abc import Iterator
 
 from stablevoy.http.transport import Transport
+from stablevoy.model.checkout_trail import CheckoutTrail
 from stablevoy.model.created_invoice import CreatedInvoice
 from stablevoy.model.fields import Fields
 from stablevoy.model.invoice import Invoice
 from stablevoy.model.invoice_page import InvoicePage
 from stablevoy.model.invoice_summary import InvoiceSummary
-from stablevoy.model.summary_period import SummaryPeriod
+from stablevoy.model.summary_range import summary_range_query
 
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE)
 _DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -114,20 +115,17 @@ class Invoices:
         One request covers at most 92 days, so ask for a year in four parts; a longer range is refused with
         ApiError.INVALID_INVOICE_FILTER. The API allows 30 calls a minute per store.
         """
-        has_days = created_from is not None or created_to is not None
-        if (period is not None) == has_days:
-            raise ValueError("Pass either period or both created_from and created_to")
-        query: dict[str, str | int] = {}
-        if period is not None:
-            if period not in SummaryPeriod.ALL:
-                raise ValueError(f"period must be one of {', '.join(SummaryPeriod.ALL)}")
-            query["period"] = period
-        else:
-            for name, key, day in (("created_from", "createdFrom", created_from), ("created_to", "createdTo", created_to)):
-                if day is None or not _DAY.fullmatch(day):
-                    raise ValueError(f"{name} must be a date as YYYY-MM-DD")
-                query[key] = day
+        query = summary_range_query(period, created_from, created_to)
         return InvoiceSummary.from_fields(Fields.of(self._transport.get("/v1/invoices/summary", query), "summary"))
+
+    def checkout_trail(self, invoice_id: str) -> CheckoutTrail:
+        """
+        The steps one invoice went through on the payment page, oldest first: created, what the page reported (each step
+        once, with the time it was first reached), the first payment seen on chain and the outcome. Buyers who pay from
+        another device or by hand may skip page steps.
+        """
+        _check_id(invoice_id)
+        return CheckoutTrail.from_fields(Fields.of(self._transport.get(f"/v1/invoices/{invoice_id}/checkout-trail"), "checkoutTrail"))
 
     def all(
         self,

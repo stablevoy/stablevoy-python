@@ -142,7 +142,11 @@ if store.networks_without_payout:
     ...  # These enabled networks have no payout wallet, so buyers do not see them.
 if store.evm_payout_needs_review():
     ...  # The EVM payout wallet is not confirmed: store.evm_networks_blocked are not offered until the merchant reviews it in the dashboard.
+if not store.invoice_range.contains(order_total_usd_cents):
+    ...  # Outside the amounts this store accepts now: hide the payment method for this order.
 ```
+
+`store.invoice_range` is the range that applies to the store now: the account bounds (the platform ones, or a higher or lower cap set for the account on request) narrowed by the store minimum and maximum. Use it instead of computing a range from `platform.limits()`.
 
 ## Connect a shop in one click
 

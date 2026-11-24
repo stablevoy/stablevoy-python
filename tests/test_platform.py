@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from stablevoy import ApiError, PayoutSources, Store, UnexpectedResponseError, WebhookHealth
+from stablevoy import ApiError, InvoiceRange, PayoutSources, Store, UnexpectedResponseError, WebhookHealth
 
 from .support import answer, client, example, example_value
 
@@ -136,6 +136,20 @@ def test_reads_the_invoice_lifetime_from_the_limits() -> None:
         limits["maxInvoiceLifetimeMinutes"],
     )
     assert ApiError.INVALID_INVOICE_LIFETIME == "invalid_invoice_lifetime"
+
+
+def test_reads_the_invoice_range_of_the_store_and_refuses_an_answer_without_it() -> None:
+    store = dict(example("GET", "/v1/store", 200))
+    assert client(answer(200, store)).client.stores.current().invoice_range == InvoiceRange(500, 100_000)
+    raised = (
+        client(answer(200, {**store, "invoiceRange": {"minUsdCents": 500, "maxUsdCents": 20_000_000}}))
+        .client.stores.current()
+        .invoice_range
+    )
+    assert [raised.contains(cents) for cents in (499, 500, 15_000_000, 20_000_000, 20_000_001)] == [False, True, True, True, False]
+    del store["invoiceRange"]
+    with pytest.raises(UnexpectedResponseError):
+        client(answer(200, store)).client.stores.current()
 
 
 def test_refuses_a_store_without_the_evm_payout_fields() -> None:

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import ClassVar
 
 from stablevoy.model.fields import Fields
+from stablevoy.model.invoice_range import InvoiceRange
 from stablevoy.model.payout_addresses import PayoutAddresses
 from stablevoy.model.payout_sources import PayoutSources
 from stablevoy.model.webhook_health import WebhookHealth
@@ -61,6 +62,8 @@ class Store:
     """When the store was archived; None while it is not. The keys of an archived store are revoked."""
     webhook_health: WebhookHealth | None
     """State of the webhook endpoint (failing, paused); None when the store has no webhook URL. Resumed only in the dashboard."""
+    invoice_range: InvoiceRange
+    """The amounts an invoice of this store may have now; offer the payment method only inside it."""
 
     def can_accept_payments(self) -> bool:
         """
@@ -101,6 +104,7 @@ class Store:
             PayoutAddresses.from_fields(f.child("accountPayoutAddresses")),
             f.nullable_date("archivedAt"),
             _webhook_health(f.nullable_child("webhookHealth")),
+            InvoiceRange.from_fields(f.child("invoiceRange")),
         )
 
 

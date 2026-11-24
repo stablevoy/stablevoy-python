@@ -33,6 +33,7 @@ from stablevoy.model.deposit_address import DepositAddress
 from stablevoy.model.invoice import Invoice
 from stablevoy.model.invoice_page import InvoicePage
 from stablevoy.model.invoice_pricing import InvoicePricing
+from stablevoy.model.invoice_range import InvoiceRange
 from stablevoy.model.invoice_source import InvoiceSource
 from stablevoy.model.invoice_status import InvoiceStatus
 from stablevoy.model.invoice_summary import InvoiceSummary
@@ -71,6 +72,7 @@ __all__ = [
     "Invoice",
     "InvoicePage",
     "InvoicePricing",
+    "InvoiceRange",
     "InvoiceSource",
     "InvoiceStatus",
     "InvoiceSummary",

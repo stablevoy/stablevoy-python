@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0
+
+- Payout wallets in payment links: `PayoutAnchor` (the EVM and Tron wallets your shop confirmed) and `CheckoutLink().for_invoice(created, anchor)`, which returns an `AnchoredLink`: the payment link built from the site and the invoice id with `#payout=...`, and the networks whose wallet the anchor does not name. The Stablevoy payment page then refuses every other wallet, even one a compromised server would name. With no network left it raises `PayoutMismatchError`; a `checkout_url` on another site is refused.
+- The `store.payout_changed` webhook event (the payout wallet a store uses changed) is documented on `WebhookEvent`.
+- The bundled OpenAPI snapshot lists the new errors `return_url_off_site` and `return_url_without_website` (a return URL must be on the store website) and the key-public sign-in and payout errors.
+
 ## 1.12.0
 
 - `Store.invoice_range` (`InvoiceRange`) with `contains(amount_usd_cents)`: the amounts an invoice of the store may have now, in US cents. It is the account bounds (the platform ones, or a higher or lower cap set for the account on request) narrowed by the store minimum and maximum; use it instead of computing a range from `platform.limits()`, which shows only the platform default.

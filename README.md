@@ -52,6 +52,25 @@ for invoice in stablevoy.invoices.all(source=InvoiceSource.PAYMENT_LINK, created
     print(invoice.id, invoice.source.kind if invoice.source else None)
 ```
 
+## Confirm the payout wallet in the payment link
+
+Put the payout wallets your shop confirmed into the payment link, and the Stablevoy payment page refuses any other wallet, even one a compromised server would name. Save the wallets when the merchant confirms them in your shop; never take them from an API answer or a webhook.
+
+```python
+from stablevoy import CheckoutLink, PayoutAnchor, PayoutMismatchError
+
+anchor = PayoutAnchor(evm=confirmed_evm_wallet, tron=confirmed_tron_wallet)
+try:
+    link = CheckoutLink().for_invoice(created, anchor)
+    if link.mismatched_networks:
+        ...  # The payout wallet changed for these networks: ask the merchant to confirm the new one.
+    # Send the buyer to link.url
+except PayoutMismatchError:
+    ...  # No network pays to a confirmed wallet: do not send the buyer, tell the merchant.
+```
+
+When the merchant changes a payout wallet, every store using it gets a `store.payout_changed` webhook: show the merchant the new wallet and save it only after they confirm it in your shop.
+
 ## Prices in your own currency
 
 A shop that prices in EUR, GBP, JPY or another supported currency sends the price as it is, in the smallest unit of the currency, instead of the US cents:
